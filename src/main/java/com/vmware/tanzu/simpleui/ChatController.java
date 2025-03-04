@@ -54,6 +54,7 @@ public class ChatController {
 
     @GetMapping(path={"/models"})
     public List<String> models() {
+        LOGGER.info("Listing models");
         return modelResolver.availableModels();
     }
 
