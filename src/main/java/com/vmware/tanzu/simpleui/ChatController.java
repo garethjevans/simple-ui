@@ -1,0 +1,65 @@
+package com.vmware.tanzu.simpleui;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@RestController
+public class ChatController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChatController.class);
+
+    private final ChatClient chatClient;
+
+    public ChatController(ChatClient.Builder chatClientBuilder) {
+        this.chatClient = chatClientBuilder.build();
+    }
+
+    @PostMapping(path={"/chat"})
+    public List<Message> sendMessage(@RequestBody Request request) {
+        LOGGER.info("Got request: {}", request);
+
+        String responseText = chatClient.
+                prompt(new Prompt(convertMessages(request))).
+                call().content();
+
+        Message response = new Message("system", responseText);
+        LOGGER.info("Got response: {}", response);
+
+        return List.of(response);
+    }
+
+    @GetMapping(path={"/models"})
+    public List<String> models() {
+        return List.of("gpt-4o-mini");
+    }
+
+    private List<org.springframework.ai.chat.messages.Message> convertMessages(Request request) {
+        List<org.springframework.ai.chat.messages.Message> messages = new ArrayList<>();
+        for (Message m : request.messages()) {
+            if ("user".equals(m.role)) {
+                messages.add(new UserMessage(m.message));
+            } else {
+                messages.add(new AssistantMessage(m.message));
+            }
+        }
+        return messages;
+    }
+
+
+    public record Request(List<Message> messages, String model) {}
+
+    public record Message(String role, String message) {}
+}
