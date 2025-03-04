@@ -7,6 +7,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +36,14 @@ public class ChatController {
         LOGGER.info("Got request: {}", request);
 
         String responseText = chatClient.
-                prompt(new Prompt(convertMessages(request))).
+                prompt(new Prompt(
+                        convertMessages(request),
+                        ChatOptions.
+                                builder().
+                                model(request.model()).
+                                build()
+                        )
+                ).
                 call().content();
 
         Message response = new Message("system", responseText);
