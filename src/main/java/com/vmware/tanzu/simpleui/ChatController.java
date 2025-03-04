@@ -1,11 +1,13 @@
 package com.vmware.tanzu.simpleui;
 
+import com.vmware.tanzu.simpleui.model.ModelResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,9 +24,11 @@ public class ChatController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatController.class);
 
     private final ChatClient chatClient;
+    private final ModelResolver modelResolver;
 
-    public ChatController(ChatClient.Builder chatClientBuilder) {
+    public ChatController(ChatClient.Builder chatClientBuilder, ModelResolver modelResolver) {
         this.chatClient = chatClientBuilder.build();
+        this.modelResolver = modelResolver;
     }
 
     @PostMapping(path={"/chat"})
@@ -32,7 +36,14 @@ public class ChatController {
         LOGGER.info("Got request: {}", request);
 
         String responseText = chatClient.
-                prompt(new Prompt(convertMessages(request))).
+                prompt(new Prompt(
+                        convertMessages(request),
+                        ChatOptions.
+                                builder().
+                                model(request.model()).
+                                build()
+                        )
+                ).
                 call().content();
 
         Message response = new Message("system", responseText);
@@ -43,7 +54,8 @@ public class ChatController {
 
     @GetMapping(path={"/models"})
     public List<String> models() {
-        return List.of("gpt-4o-mini");
+        LOGGER.info("Listing models");
+        return modelResolver.availableModels();
     }
 
     private List<org.springframework.ai.chat.messages.Message> convertMessages(Request request) {

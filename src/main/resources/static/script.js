@@ -2,6 +2,7 @@ const msgerForm = get(".msger-inputarea");
 const msgerInput = get(".msger-input");
 const msgerChat = get(".msger-chat");
 const msgerClear = get(".msger-clear-btn")
+const modelsSelect = get(".models")
 
 // Icons made by Freepik from www.flaticon.com
 const BOT_IMG = "https://image.flaticon.com/icons/svg/327/327779.svg";
@@ -18,12 +19,20 @@ msgerForm.addEventListener("submit", event => {
   msgText = msgerInput.value;
   if (!msgText) return;
 
+  model = modelsSelect.options[modelsSelect.selectedIndex].text;
+  if (!model) return;
+
   appendMessage(PERSON_NAME, PERSON_IMG, "right", msgText);
   msgerInput.value = "";
 
+  conversation.model = model
   conversation.messages.push({role:"user", message: msgText})
 
   userAction();
+});
+
+window.addEventListener("load", event => {
+  modelsAction();
 });
 
 msgerClear.addEventListener("click", event => {
@@ -63,6 +72,19 @@ const userAction = async () => {
   const myJson = await response.json();
   conversation.messages.push({role:myJson[0].role, message: myJson[0].message})
   appendMessage(myJson[0].role, BOT_IMG, "left", myJson[0].message);
+}
+
+const modelsAction = async () => {
+  const response = await fetch('/models', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
+    }
+  });
+  const myJson = await response.json();
+  for (let i = 0; i < myJson.length; i++) {
+    modelsSelect.options[modelsSelect.options.length] = new Option(myJson[i], myJson[i]);
+  }
 }
 
 // Utils
