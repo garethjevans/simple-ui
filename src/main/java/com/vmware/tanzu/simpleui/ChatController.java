@@ -1,5 +1,6 @@
 package com.vmware.tanzu.simpleui;
 
+import com.vmware.tanzu.simpleui.model.ModelResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -22,9 +23,11 @@ public class ChatController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatController.class);
 
     private final ChatClient chatClient;
+    private final ModelResolver modelResolver;
 
-    public ChatController(ChatClient.Builder chatClientBuilder) {
+    public ChatController(ChatClient.Builder chatClientBuilder, ModelResolver modelResolver) {
         this.chatClient = chatClientBuilder.build();
+        this.modelResolver = modelResolver;
     }
 
     @PostMapping(path={"/chat"})
@@ -43,7 +46,7 @@ public class ChatController {
 
     @GetMapping(path={"/models"})
     public List<String> models() {
-        return List.of("gpt-4o-mini");
+        return modelResolver.availableModels();
     }
 
     private List<org.springframework.ai.chat.messages.Message> convertMessages(Request request) {
