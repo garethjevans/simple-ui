@@ -20,3 +20,9 @@ export OPENAI_URL=yyy
 ```
 
 Then access the UI in the browser at http://localhost:8080
+
+To run with local mcp client:
+
+```shell
+SPRING_AI_MCP_CLIENT_STDIO_SERVERS_CONFIGURATION=file://$PWD/../servers.json ./mvnw clean spring-boot:run
+```
