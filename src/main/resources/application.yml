@@ -8,6 +8,8 @@ spring:
         enabled: false
       image:
         enabled: false
+      transcription:
+        enabled: false
     mcp:
       client:
         enabled: true
