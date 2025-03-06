@@ -22,5 +22,5 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file pom.xml
       env:
-        SPRING_AI_OPENAI_CHAT_API_KEY: "xxx"
+        SPRING_AI_OPENAI_API_KEY: "xxx"
         SPRING_AI_OPENAI_CHAT_BASE_URL: https://api.openai.com/
