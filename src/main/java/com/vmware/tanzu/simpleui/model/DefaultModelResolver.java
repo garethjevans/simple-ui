@@ -11,18 +11,29 @@ import java.util.List;
 public class DefaultModelResolver implements ModelResolver {
 
     private final String apiKey;
+    private final String chatApiKey;
     private final String baseUrl;
 
-    public DefaultModelResolver(@Value("${spring.ai.openai.chat.api-key}") String apiKey,
+    public DefaultModelResolver(@Value("${spring.ai.openai.api-key:}") String apiKey,
+                                @Value("${spring.ai.openai.chat.api-key:}") String chatApiKey,
                                 @Value("${spring.ai.openai.chat.base-url}") String baseUrl) {
         this.apiKey = apiKey;
+        this.chatApiKey = chatApiKey;
         this.baseUrl = baseUrl;
     }
+
+    private String apiKey() {
+        if (!chatApiKey.isEmpty()) {
+            return chatApiKey;
+        }
+        return apiKey;
+    }
+
 
     @Override
     public List<String> availableModels() {
         RestClient client = RestClient.builder().baseUrl(baseUrl).build();
-        Response models = client.get().uri("/v1/models").headers(httpHeaders -> httpHeaders.add("Authorization", "Bearer " + apiKey)).
+        Response models = client.get().uri("/v1/models").headers(httpHeaders -> httpHeaders.add("Authorization", "Bearer " + apiKey())).
                 retrieve()
                 .body(Response.class);
         return convert(models);
