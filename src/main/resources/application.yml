@@ -4,8 +4,10 @@ spring:
 
   ai:
     openai:
-      api-key: ${OPENAI_KEY}
-      base-url: ${OPENAI_URL}
+      embedding:
+        enabled: false
+      image:
+        enabled: false
 
     mcp:
       client:
