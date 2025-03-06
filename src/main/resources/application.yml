@@ -6,6 +6,8 @@ spring:
     openai:
       embedding:
         enabled: false
+      image:
+        enabled: false
     mcp:
       client:
         enabled: true
