@@ -3,6 +3,9 @@ spring:
     name: simpleui
 
   ai:
+    openai:
+      embedding:
+        enabled: false
     mcp:
       client:
         enabled: true
