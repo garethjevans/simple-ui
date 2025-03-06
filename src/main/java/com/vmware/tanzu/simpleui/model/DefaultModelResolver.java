@@ -13,8 +13,8 @@ public class DefaultModelResolver implements ModelResolver {
     private final String apiKey;
     private final String baseUrl;
 
-    public DefaultModelResolver(@Value("${spring.ai.openai.api-key}") String apiKey,
-                                @Value("${spring.ai.openai.base-url}") String baseUrl) {
+    public DefaultModelResolver(@Value("${spring.ai.openai.chat.api-key}") String apiKey,
+                                @Value("${spring.ai.openai.chat.base-url}") String baseUrl) {
         this.apiKey = apiKey;
         this.baseUrl = baseUrl;
     }

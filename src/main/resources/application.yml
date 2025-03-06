@@ -3,10 +3,6 @@ spring:
     name: simpleui
 
   ai:
-    openai:
-      api-key: ${OPENAI_KEY}
-      base-url: ${OPENAI_URL}
-
     mcp:
       client:
         enabled: true
