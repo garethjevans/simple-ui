@@ -11,5 +11,3 @@ spring:
       client:
         enabled: true
         type: SYNC
-#        stdio:
-#          servers-configuration: classpath:servers.json
