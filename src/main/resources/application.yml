@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: simpleui
+
+  ai:
+    openai:
+      api-key: ${OPENAI_KEY}
+      base-url: ${OPENAI_URL}
+
+    mcp:
+      client:
+        enabled: true
+        type: SYNC
+#        stdio:
+#          servers-configuration: classpath:servers.json

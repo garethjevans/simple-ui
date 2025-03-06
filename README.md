@@ -10,3 +10,13 @@ export OPENAI_KEY=xxx
 ```
 
 Then access the UI in the browser at http://localhost:8080
+
+To run against Tanzu AI Server:
+
+```shell
+export OPENAI_KEY=xxx
+export OPENAI_URL=yyy
+./mvnw spring-boot:run
+```
+
+Then access the UI in the browser at http://localhost:8080

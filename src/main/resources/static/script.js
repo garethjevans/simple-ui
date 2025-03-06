@@ -10,6 +10,7 @@ const PERSON_IMG = "https://image.flaticon.com/icons/svg/145/145867.svg";
 const PERSON_NAME = "user";
 
 var conversation = {messages:[]}
+var converter = new showdown.Converter();
 
 var msgText = ""
 
@@ -46,7 +47,7 @@ function appendMessage(name, img, side, text) {
     <div class="msg ${side}-msg">
       <div class="msg-img" style="background-image: url(${img})"></div>
 
-      <div class="msg-bubble">
+      <div class="msg-bubble ${name}">
         <div class="msg-info">
           <div class="msg-info-name">${name}</div>
           <div class="msg-info-time">${formatDate(new Date())}</div>
@@ -70,8 +71,11 @@ const userAction = async () => {
     }
   });
   const myJson = await response.json();
-  conversation.messages.push({role:myJson[0].role, message: myJson[0].message})
-  appendMessage(myJson[0].role, BOT_IMG, "left", myJson[0].message);
+  if (myJson[0].role !== "error") {
+    conversation.messages.push({role:myJson[0].role, message: myJson[0].message})
+  }
+
+  appendMessage(myJson[0].role, BOT_IMG, "left",converter.makeHtml(myJson[0].message));
 }
 
 const modelsAction = async () => {
