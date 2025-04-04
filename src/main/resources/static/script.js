@@ -44,8 +44,8 @@ function appendMessage(name, img, side, text, usage) {
   if (side === "left") {
     msgHTML = `
     <div class="msg ${side}-msg">
-      <div class="msg-img">
-        <i class="fa-solid ${img}"></i>
+      <div class="msg-img fa-solid fa-2xl ${img}">
+
       </div>
 
       <div class="msg-bubble ${name}">
@@ -55,7 +55,7 @@ function appendMessage(name, img, side, text, usage) {
         </div>
 
         <div class="msg-text">${text}</div>
-        
+
         <div class="msg-info-usage"><i class="fa-solid fa-terminal"></i> ${usage.promptTokens}, <i class="fa-solid fa-arrow-right-from-bracket"></i> ${usage.completionTokens}, <i class="fa-solid fa-square-plus"></i> ${usage.totalTokens}, <i class="fa-solid fa-clock"></i> ${usage.timeTaken}ms, <i class="fa-solid fa-gauge-high"></i> ${usage.tokensPerSecond}</div>
       </div>
     </div>
@@ -63,8 +63,8 @@ function appendMessage(name, img, side, text, usage) {
   } else {
     msgHTML = `
     <div class="msg ${side}-msg">
-      <div class="msg-img">
-        <i class="fa-solid ${img}"></i>
+      <div class="msg-img fa-solid fa-2xl ${img}">
+
       </div>
 
       <div class="msg-bubble ${name}">
@@ -74,7 +74,7 @@ function appendMessage(name, img, side, text, usage) {
         </div>
 
         <div class="msg-text">${text}</div>
-        
+
        </div>
     </div>
   `;
