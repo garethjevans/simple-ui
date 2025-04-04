@@ -32,7 +32,7 @@ body {
   flex-flow: column wrap;
   justify-content: space-between;
   width: 100%;
-  max-width: 867px;
+  max-width: 1400px;
   margin: 25px 10px;
   height: calc(100% - 50px);
   border: var(--border);
@@ -83,7 +83,7 @@ body {
   border-radius: 50%;
 }
 .msg-bubble {
-  max-width: 450px;
+  max-width: 800px;
   padding: 15px;
   border-radius: 15px;
   background: var(--left-msg-bg);
