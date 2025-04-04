@@ -101,6 +101,11 @@ body {
 .msg-info-time {
   font-size: 0.85em;
 }
+.msg-info-usage {
+  margin-top: 10px;
+  font-size: 0.85em;
+  font-style: italic;
+}
 
 .left-msg .msg-bubble {
   border-bottom-left-radius: 0;

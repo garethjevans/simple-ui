@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.metadata.EmptyUsage;
+import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
@@ -42,11 +44,10 @@ public class ChatController {
     }
 
     @PostMapping(path={"/chat"})
-    public List<Message> sendMessage(@RequestBody Request request) {
+    public ChatResponse sendMessage(@RequestBody ChatRequest request) {
         LOGGER.info("Got request: {}", request);
-        Message response = null;
         try {
-            String responseText = client.
+            var response = client.
                     prompt(new Prompt(
                                     convertMessages(request),
                                     ToolCallingChatOptions.
@@ -55,15 +56,24 @@ public class ChatController {
                                             build()
                             )
                     ).
-                    call().content();
+                    call().chatResponse();
 
-            response = new Message("assistant", responseText);
+            String model = response.getMetadata().getModel();
+            String responseText = response.getResult().getOutput().getText();
+            Usage usage = response.getMetadata().getUsage();
+
+            var cr = new ChatResponse(List.of(new Message("assistant", responseText)), model, usage);
+            LOGGER.info("Got chatResponse: {}", cr);
+            return cr;
         } catch (NonTransientAiException exp) {
-            response = new Message("error", exp.getMessage());
-        }
+            String responseText = exp.getMessage();
+            String model = "error";
+            Usage usage = new EmptyUsage();
 
-        LOGGER.info("Got response: {}", response);
-        return List.of(response);
+            var cr = new ChatResponse(List.of(new Message("error", responseText)), model, usage);
+            LOGGER.info("Got failed chatResponse: {}", cr);
+            return cr;
+        }
     }
 
     @GetMapping(path={"/models"})
@@ -72,7 +82,7 @@ public class ChatController {
         return modelResolver.availableModels();
     }
 
-    private List<org.springframework.ai.chat.messages.Message> convertMessages(Request request) {
+    private List<org.springframework.ai.chat.messages.Message> convertMessages(ChatRequest request) {
         List<org.springframework.ai.chat.messages.Message> messages = new ArrayList<>();
         for (Message m : request.messages()) {
             if ("user".equals(m.role)) {
@@ -85,7 +95,9 @@ public class ChatController {
     }
 
 
-    public record Request(List<Message> messages, String model) {}
+    public record ChatRequest(List<Message> messages, String model) {}
+
+    public record ChatResponse(List<Message> messages, String model, Usage usage) {}
 
     public record Message(String role, String message) {}
 }
