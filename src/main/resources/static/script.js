@@ -5,8 +5,6 @@ const msgerClear = get(".msger-clear-btn")
 const modelsSelect = get(".models")
 
 // Icons made by Freepik from www.flaticon.com
-const BOT_IMG = "https://image.flaticon.com/icons/svg/327/327779.svg";
-const PERSON_IMG = "https://image.flaticon.com/icons/svg/145/145867.svg";
 const PERSON_NAME = "user";
 
 var conversation = {messages:[]}
@@ -23,7 +21,7 @@ msgerForm.addEventListener("submit", event => {
   model = modelsSelect.options[modelsSelect.selectedIndex].text;
   if (!model) return;
 
-  appendMessage(PERSON_NAME, PERSON_IMG, "right", msgText);
+  appendMessage(PERSON_NAME, "fa-user", "right", msgText);
   msgerInput.value = "";
 
   conversation.model = model
@@ -46,7 +44,9 @@ function appendMessage(name, img, side, text, usage) {
   if (side === "left") {
     msgHTML = `
     <div class="msg ${side}-msg">
-      <div class="msg-img" style="background-image: url(${img})"></div>
+      <div class="msg-img">
+        <i class="fa-solid ${img}"></i>
+      </div>
 
       <div class="msg-bubble ${name}">
         <div class="msg-info">
@@ -56,14 +56,16 @@ function appendMessage(name, img, side, text, usage) {
 
         <div class="msg-text">${text}</div>
         
-        <div class="msg-info-usage">P ${usage.promptTokens}, C ${usage.completionTokens}, T ${usage.totalTokens}, Time ${usage.timeTaken}ms, TPS ${usage.tokensPerSecond}</div>
+        <div class="msg-info-usage"><i class="fa-solid fa-terminal"></i> ${usage.promptTokens}, <i class="fa-solid fa-arrow-right-from-bracket"></i> ${usage.completionTokens}, <i class="fa-solid fa-square-plus"></i> ${usage.totalTokens}, <i class="fa-solid fa-clock"></i> ${usage.timeTaken}ms, <i class="fa-solid fa-gauge-high"></i> ${usage.tokensPerSecond}</div>
       </div>
     </div>
   `;
   } else {
     msgHTML = `
     <div class="msg ${side}-msg">
-      <div class="msg-img" style="background-image: url(${img})"></div>
+      <div class="msg-img">
+        <i class="fa-solid ${img}"></i>
+      </div>
 
       <div class="msg-bubble ${name}">
         <div class="msg-info">
@@ -96,7 +98,7 @@ const userAction = async () => {
   }
 
   appendMessage(myJson.messages[0].role,
-      BOT_IMG,
+      "fa-desktop",
       "left",
       converter.makeHtml(myJson.messages[0].message),
       myJson.usage);
