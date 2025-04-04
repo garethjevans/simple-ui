@@ -43,7 +43,7 @@ msgerClear.addEventListener("click", event => {
 
 function appendMessage(name, img, side, text, usage) {
   var msgHTML = "";
-  if (side == "left") {
+  if (side === "left") {
     msgHTML = `
     <div class="msg ${side}-msg">
       <div class="msg-img" style="background-image: url(${img})"></div>
@@ -56,7 +56,7 @@ function appendMessage(name, img, side, text, usage) {
 
         <div class="msg-text">${text}</div>
         
-        <div class="msg-info-usage">P ${usage.promptTokens}, C ${usage.completionTokens}, T ${usage.totalTokens}</div>
+        <div class="msg-info-usage">P ${usage.promptTokens}, C ${usage.completionTokens}, T ${usage.totalTokens}, Time ${usage.timeTaken}ms, TPS ${usage.tokensPerSecond}</div>
       </div>
     </div>
   `;

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,6 +28,8 @@ public class ChatController {
 
     private final ModelResolver modelResolver;
     private final ChatClient client;
+
+    private static final DecimalFormat df = new DecimalFormat("0.00");
 
     public ChatController(ChatClient.Builder chatClientBuilder, ModelResolver modelResolver, SyncMcpToolCallbackProvider toolCallbackProvider) {
         LOGGER.info("using ToolCallbackProvider {}", toolCallbackProvider);
@@ -47,6 +50,7 @@ public class ChatController {
     public ChatResponse sendMessage(@RequestBody ChatRequest request) {
         LOGGER.info("Got request: {}", request);
         try {
+            long start = System.currentTimeMillis();
             var response = client.
                     prompt(new Prompt(
                                     convertMessages(request),
@@ -60,17 +64,18 @@ public class ChatController {
 
             String model = response.getMetadata().getModel();
             String responseText = response.getResult().getOutput().getText();
-            Usage usage = response.getMetadata().getUsage();
+            org.springframework.ai.chat.metadata.Usage usage = response.getMetadata().getUsage();
 
-            var cr = new ChatResponse(List.of(new Message("assistant", responseText)), model, usage);
+            long end = System.currentTimeMillis();
+
+            var cr = new ChatResponse(List.of(new Message("assistant", responseText)), model, new Usage(usage.getPromptTokens(), usage.getCompletionTokens(), end - start));
             LOGGER.info("Got chatResponse: {}", cr);
             return cr;
         } catch (NonTransientAiException exp) {
             String responseText = exp.getMessage();
             String model = "error";
-            Usage usage = new EmptyUsage();
 
-            var cr = new ChatResponse(List.of(new Message("error", responseText)), model, usage);
+            var cr = new ChatResponse(List.of(new Message("error", responseText)), model, null);
             LOGGER.info("Got failed chatResponse: {}", cr);
             return cr;
         }
@@ -100,4 +105,15 @@ public class ChatController {
     public record ChatResponse(List<Message> messages, String model, Usage usage) {}
 
     public record Message(String role, String message) {}
+
+    public record Usage(Integer promptTokens, Integer completionTokens, Integer totalTokens, Long timeTaken, String tokensPerSecond) {
+
+        public Usage(Integer promptTokens, Integer completionTokens, Long timeTaken) {
+            this(promptTokens,
+            completionTokens,
+            promptTokens + completionTokens,
+            timeTaken,
+            df.format(((double)(promptTokens + completionTokens)*1000) / (double)timeTaken));
+        }
+    }
 }
