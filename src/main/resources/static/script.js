@@ -97,7 +97,8 @@ const userAction = async () => {
     conversation.messages.push({role: myJson.messages[0].role, message: myJson.messages[0].message})
   }
 
-  appendMessage(myJson.messages[0].role,
+  var role = myJson.messages[0].role + " (" + myJson.model + ")"
+  appendMessage(role,
       "fa-desktop",
       "left",
       converter.makeHtml(myJson.messages[0].message),
