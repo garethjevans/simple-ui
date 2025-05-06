@@ -7,9 +7,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.retry.NonTransientAiException;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,14 +29,16 @@ public class ChatController {
 
     private static final DecimalFormat df = new DecimalFormat("0.00");
 
-    public ChatController(ChatClient.Builder chatClientBuilder, ModelResolver modelResolver, SyncMcpToolCallbackProvider toolCallbackProvider) {
+    public ChatController(ChatClient.Builder chatClientBuilder, ModelResolver modelResolver, ToolCallbackProvider toolCallbackProvider) {
         LOGGER.info("using ToolCallbackProvider {}", toolCallbackProvider);
 
         this.modelResolver = modelResolver;
 
-        var callbacks = toolCallbackProvider.getToolCallbacks();
-        for (var callback : callbacks) {
-            LOGGER.info("Got tool {}: {}", callback.getToolDefinition().name(), callback.getToolDefinition().description());
+        if (toolCallbackProvider != null) {
+            var callbacks = toolCallbackProvider.getToolCallbacks();
+            for (var callback : callbacks) {
+                LOGGER.info("Got tool {}: {}", callback.getToolDefinition().name(), callback.getToolDefinition().description());
+            }
         }
 
         client = chatClientBuilder
