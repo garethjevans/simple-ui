@@ -42,7 +42,7 @@ public class ChatController {
         }
 
         client = chatClientBuilder
-                .defaultTools(toolCallbackProvider)
+                .defaultToolCallbacks(toolCallbackProvider)
                 .build();
     }
 
