@@ -42,24 +42,44 @@ msgerClear.addEventListener("click", event => {
 function appendMessage(name, img, side, text, usage) {
   var msgHTML = "";
   if (side === "left") {
-    msgHTML = `
-    <div class="msg ${side}-msg">
-      <div class="msg-img fa-solid fa-2xl ${img}">
+    if (usage != null) {
+      msgHTML = `
+      <div class="msg ${side}-msg">
+        <div class="msg-img fa-solid fa-2xl ${img}">
 
-      </div>
-
-      <div class="msg-bubble ${name}">
-        <div class="msg-info">
-          <div class="msg-info-name">${name}</div>
-          <div class="msg-info-time">${formatDate(new Date())}</div>
         </div>
 
-        <div class="msg-text">${text}</div>
+        <div class="msg-bubble ${name}">
+          <div class="msg-info">
+            <div class="msg-info-name">${name}</div>
+            <div class="msg-info-time">${formatDate(new Date())}</div>
+          </div>
 
-        <div class="msg-info-usage"><i class="fa-solid fa-terminal"></i> ${usage.promptTokens}, <i class="fa-solid fa-arrow-right-from-bracket"></i> ${usage.completionTokens}, <i class="fa-solid fa-square-plus"></i> ${usage.totalTokens}, <i class="fa-solid fa-clock"></i> ${usage.timeTaken}ms, <i class="fa-solid fa-gauge-high"></i> ${usage.tokensPerSecond}</div>
+          <div class="msg-text">${text}</div>
+
+          <div class="msg-info-usage"><i class="fa-solid fa-terminal"></i> ${usage.promptTokens}, <i class="fa-solid fa-arrow-right-from-bracket"></i> ${usage.completionTokens}, <i class="fa-solid fa-square-plus"></i> ${usage.totalTokens}, <i class="fa-solid fa-clock"></i> ${usage.timeTaken}ms, <i class="fa-solid fa-gauge-high"></i> ${usage.tokensPerSecond}</div>
+        </div>
       </div>
-    </div>
-  `;
+      `;
+    } else {
+      msgHTML = `
+      <div class="msg ${side}-msg">
+        <div class="msg-img fa-solid fa-2xl ${img}">
+
+        </div>
+
+        <div class="msg-bubble ${name}">
+          <div class="msg-info">
+            <div class="msg-info-name">${name}</div>
+            <div class="msg-info-time">${formatDate(new Date())}</div>
+          </div>
+
+          <div class="msg-text">${text}</div>
+
+        </div>
+      </div>
+      `;
+    }
   } else {
     msgHTML = `
     <div class="msg ${side}-msg">

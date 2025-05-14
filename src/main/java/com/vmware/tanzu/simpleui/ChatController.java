@@ -64,6 +64,7 @@ public class ChatController {
 
             String model = response.getMetadata().getModel();
             String responseText = response.getResult().getOutput().getText();
+            responseText = responseText.replace("<", "&lt;").replace(">", "&gt;");
             org.springframework.ai.chat.metadata.Usage usage = response.getMetadata().getUsage();
 
             long end = System.currentTimeMillis();

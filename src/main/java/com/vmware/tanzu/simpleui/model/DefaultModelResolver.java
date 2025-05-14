@@ -33,8 +33,10 @@ public class DefaultModelResolver implements ModelResolver {
     @Override
     public List<String> availableModels() {
         RestClient client = RestClient.builder().baseUrl(baseUrl).build();
-        Response models = client.get().uri("/v1/models").headers(httpHeaders -> httpHeaders.add("Authorization", "Bearer " + apiKey())).
-                retrieve()
+        Response models = client.get()
+                .uri("/v1/models")
+                .headers(httpHeaders -> httpHeaders.add("Authorization", "Bearer " + apiKey()))
+                .retrieve()
                 .body(Response.class);
         return convert(models);
     }
