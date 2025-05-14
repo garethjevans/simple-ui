@@ -42,61 +42,68 @@ msgerClear.addEventListener("click", event => {
 function appendMessage(name, img, side, text, usage) {
   var msgHTML = "";
   if (side === "left") {
-    if (usage != null) {
+    if (name !== "error (error)") {
       msgHTML = `
-      <div class="msg ${side}-msg">
-        <div class="msg-img fa-solid fa-2xl ${img}">
-
-        </div>
-
-        <div class="msg-bubble ${name}">
-          <div class="msg-info">
-            <div class="msg-info-name">${name}</div>
-            <div class="msg-info-time">${formatDate(new Date())}</div>
+        <div class="clr-row left-msg">
+          <div class="${name}">
+            <div class="card">
+              <div class="card-header">${name}</div>
+              <div class="card-block">
+                <div class="card-title">${formatDate(new Date())}</div>
+                <div class="card-text">
+                  ${text}
+                </div>
+              </div>
+              <div class="card-footer">
+                <i class="fa-solid fa-terminal"></i> ${usage.promptTokens}, 
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> ${usage.completionTokens}, 
+                <i class="fa-solid fa-square-plus"></i> ${usage.totalTokens}, 
+                <i class="fa-solid fa-clock"></i> ${usage.timeTaken}ms, 
+                <i class="fa-solid fa-gauge-high"></i> ${usage.tokensPerSecond}
+              </div>
+            </div>
           </div>
-
-          <div class="msg-text">${text}</div>
-
-          <div class="msg-info-usage"><i class="fa-solid fa-terminal"></i> ${usage.promptTokens}, <i class="fa-solid fa-arrow-right-from-bracket"></i> ${usage.completionTokens}, <i class="fa-solid fa-square-plus"></i> ${usage.totalTokens}, <i class="fa-solid fa-clock"></i> ${usage.timeTaken}ms, <i class="fa-solid fa-gauge-high"></i> ${usage.tokensPerSecond}</div>
         </div>
-      </div>
       `;
     } else {
       msgHTML = `
-      <div class="msg ${side}-msg">
-        <div class="msg-img fa-solid fa-2xl ${img}">
-
-        </div>
-
-        <div class="msg-bubble ${name}">
-          <div class="msg-info">
-            <div class="msg-info-name">${name}</div>
-            <div class="msg-info-time">${formatDate(new Date())}</div>
+        <div class="clr-row left-msg">
+          <div class="${name}">
+            <div class="card">
+              <div class="card-header">${name}</div>
+              <div class="card-block">
+                <div class="card-title">${formatDate(new Date())}</div>
+                <div class="alert alert-warning alert-sm">
+                  <div class="alert-items">
+                    <div class="alert-item static">
+                      <div class="alert-icon-wrapper">
+                        <cds-icon class="alert-icon" shape="exclamation-triangle"></cds-icon>
+                      </div>
+                      <span class="alert-text">${text}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-
-          <div class="msg-text">${text}</div>
-
         </div>
-      </div>
       `;
     }
   } else {
     msgHTML = `
-    <div class="msg ${side}-msg">
-      <div class="msg-img fa-solid fa-2xl ${img}">
-
-      </div>
-
-      <div class="msg-bubble ${name}">
-        <div class="msg-info">
-          <div class="msg-info-name">${name}</div>
-          <div class="msg-info-time">${formatDate(new Date())}</div>
+      <div class="clr-row right-msg">
+        <div class="${name}">
+          <div class="card">
+            <div class="card-header">${name}</div>
+            <div class="card-block">
+              <div class="card-title">${formatDate(new Date())}</div>
+              <div class="card-text">
+                ${text}
+              </div>
+            </div>
+          </div>
         </div>
-
-        <div class="msg-text">${text}</div>
-
-       </div>
-    </div>
+      </div>
   `;
   }
 
@@ -146,8 +153,9 @@ function get(selector, root = document) {
 function formatDate(date) {
   const h = "0" + date.getHours();
   const m = "0" + date.getMinutes();
+  const s = "0" + date.getSeconds();
 
-  return `${h.slice(-2)}:${m.slice(-2)}`;
+  return `${h.slice(-2)}:${m.slice(-2)}:${s.slice(-2)}`;
 }
 
 function clear() {
