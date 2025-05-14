@@ -1,33 +1,76 @@
-<html>
-  <head>
-    <title>Simple Chat UI</title>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Tanzu AI Studio :: Chat</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <link rel="icon" type="image/x-icon" href="tanzu.ico" />
+
+    <link rel="stylesheet" href="https://unpkg.com/@cds/core@6.9.2/global.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@cds/core@6.9.2/styles/theme.dark.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@clr/ui@17.0.0/clr-ui.min.css" />
     <link rel="stylesheet" href="style.css" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet" />
+
     <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
-  </head>
-  <body>
-    <section class="msger">
-      <header class="msger-header">
-        <div class="msger-header-title">
-          <i class="fas fa-comment-alt"></i> Simple Chat UI
+</head>
+
+<body cds-theme="dark">
+
+<div class="main-container">
+    <header class="header">
+        <div class="branding">
+            <a class="logo-and-title" href="javascript://"><span class="clr-icon tanzu-logo" style="background-image: url('tanzu.ico')"></span><span class="title">Tanzu AI Studio</span></a>
         </div>
-        <div class="msger-header-options">
-          <span><i class="fas fa-cog"></i></span>
+        <div class="header-actions">
+            <a href="javascript://" class="nav-link nav-icon" aria-label="settings">
+                <span class="logged-in-user">Settings</span>
+            </a>
         </div>
-      </header>
+    </header>
 
-      <main class="msger-chat">
+    <div class="content-container">
+        <div class="content-area">
 
-      </main>
+            <div class="breadcrumbs">
+                <clr-breadcrumbs class="clr-breadcrumb" role="navigation">
+                    <div class="clr-breadcrumb-menu">
+                        <clr-breadcrumb-item class="clr-breadcrumb-item ng-star-inserted" role="list-item">
+                            <span aria-current="page" class="ng-star-inserted">GenAI on Tanzu Platform </span> <
+                        </clr-breadcrumb-item>
+                        <clr-breadcrumb-item class="clr-breadcrumb-item ng-star-inserted" role="list-item">
+                            <span aria-current="page" class="ng-star-inserted">Chat</span>
+                        </clr-breadcrumb-item>
+                    </div>
+                </clr-breadcrumbs>
+                <hr>
+            </div>
 
-      <form class="msger-inputarea">
-        <select name="models" class="models"></select>
-        <input type="text" class="msger-input" placeholder="Enter your message...">
-        <button type="submit" class="msger-send-btn">Send</button>
-        <button type="submit" class="msger-clear-btn">Clear</button>
-      </form>
-    </section>
+            <div class="app-body">
 
-    <script src="script.js"></script>
-  </body>
+                <div class="msger-chat"></div>
+                <p></p>
+
+                <hr />
+
+                <div class="clr-row">
+                    <form class="msger-inputarea">
+                        <div class="clr-select-wrapper">
+                            <select name="models" class="clr-select models"></select>
+                        </div>
+                        <input type="text" id="basic" placeholder="Enter your message..." size="100" class="clr-input msger-input" />
+                        <button class="btn btn-link msger-send-btn">Send</button>
+                        <button class="btn btn-link msger-clear-btn">Clear</button>
+                        </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
 </html>
