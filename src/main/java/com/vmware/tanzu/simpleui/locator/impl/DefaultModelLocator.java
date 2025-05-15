@@ -17,27 +17,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.ai.document.MetadataMode;
 
+import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class DefaultModelLocator implements ModelLocator {
 
-    private final VcapService genaiService;
+    private final List<VcapService> genaiServices;
 
     public DefaultModelLocator() {
-        genaiService = getGenAiService(System.getenv("VCAP_SERVICES"));
+        genaiServices = getGenAiServices(System.getenv("VCAP_SERVICES"));
     }
 
     public DefaultModelLocator(String vcapServices) {
-        genaiService = getGenAiService(vcapServices);
+        genaiServices = getGenAiServices(vcapServices);
     }
 
     @Override
     public List<String> getModelNames() {
-        ConfigEndpoint endpoint = getEndpoint();
+        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
 
-        return endpoint.advertisedModels
+        return models
                 .stream()
                 .map(a -> a.name)
                 .toList();
@@ -45,9 +46,9 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public List<String> getModelNamesByCapability(String capability) {
-        ConfigEndpoint endpoint = getEndpoint();
+        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
 
-        return endpoint.advertisedModels
+        return models
                 .stream()
                 .filter(a -> a.capabilities().contains(capability))
                 .map(a -> a.name)
@@ -56,117 +57,111 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public ChatModel getChatModelByName(String name) {
-        ConfigEndpoint endpoint = getEndpoint();
+        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
 
-        List<String> availableChatModels = endpoint.advertisedModels
+        ModelConnectivity connectivity = models
                 .stream()
                 .filter(a -> a.capabilities().contains("CHAT"))
-                .map(a -> a.name)
-                .toList();
-
-        if (availableChatModels.contains(name)) {
-            OpenAiApi api = OpenAiApi
-                    .builder()
-                    .apiKey(genaiService.credentials().endpoint().apiKey())
-                    .baseUrl(genaiService.credentials.endpoint().apiBase() + "/" + endpoint.wireFormat().toLowerCase())
-                    .build();
-
-            return OpenAiChatModel
-                    .builder()
-                    .defaultOptions(OpenAiChatOptions.builder().model(name).build())
-                    .openAiApi(api)
-                    .build();
-        }
-
-        throw new RuntimeException("Unable to find chat model with name '" + name + "'");
-    }
-
-    @Override
-    public ChatModel getFirstAvailableChatModel() {
-        ConfigEndpoint endpoint = getEndpoint();
-
-        String firstChatModel = endpoint.advertisedModels
-                .stream()
-                .filter(a -> a.capabilities().contains("CHAT"))
-                .map(a -> a.name)
-                .toList().getFirst();
+                .filter(c -> c.name().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Unable to find chat model with name '" + name + "'"));
 
         OpenAiApi api = OpenAiApi
                 .builder()
-                .apiKey(genaiService.credentials().endpoint().apiKey())
-                .baseUrl(genaiService.credentials.endpoint().apiBase() + "/" + endpoint.wireFormat().toLowerCase())
+                .apiKey(connectivity.apiKey())
+                .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
                 .build();
 
         return OpenAiChatModel
                 .builder()
-                .defaultOptions(OpenAiChatOptions.builder().model(firstChatModel).build())
+                .defaultOptions(OpenAiChatOptions.builder().model(name).build())
+                .openAiApi(api)
+                .build();
+    }
+
+    @Override
+    public ChatModel getFirstAvailableChatModel() {
+        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
+
+        ModelConnectivity connectivity = models
+                .stream()
+                .filter(a -> a.capabilities().contains("CHAT"))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Unable to find first chat model"));
+
+        OpenAiApi api = OpenAiApi
+                .builder()
+                .apiKey(connectivity.apiKey())
+                .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
+                .build();
+
+        return OpenAiChatModel
+                .builder()
+                .defaultOptions(OpenAiChatOptions.builder().model(connectivity.name()).build())
                 .openAiApi(api)
                 .build();
     }
 
     @Override
     public ChatModel getFirstAvailableToolModel() {
-        ConfigEndpoint endpoint = getEndpoint();
+        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
 
-        String firstChatModel = endpoint.advertisedModels
+        ModelConnectivity connectivity = models
                 .stream()
                 .filter(a -> a.capabilities().contains("TOOLS"))
-                .map(a -> a.name)
-                .toList().getFirst();
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Unable to find first chat model"));
 
         OpenAiApi api = OpenAiApi
                 .builder()
-                .apiKey(genaiService.credentials().endpoint().apiKey())
-                .baseUrl(genaiService.credentials.endpoint().apiBase() + "/" + endpoint.wireFormat().toLowerCase())
+                .apiKey(connectivity.apiKey())
+                .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
                 .build();
 
         return OpenAiChatModel
                 .builder()
-                .defaultOptions(OpenAiChatOptions.builder().model(firstChatModel).build())
+                .defaultOptions(OpenAiChatOptions.builder().model(connectivity.name()).build())
                 .openAiApi(api)
                 .build();
     }
 
     @Override
     public EmbeddingModel getEmbeddingModelByName(String name) {
-        ConfigEndpoint endpoint = getEndpoint();
+        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
 
-        List<String> availableChatModels = endpoint.advertisedModels
+        ModelConnectivity connectivity = models
                 .stream()
                 .filter(a -> a.capabilities().contains("EMBEDDING"))
-                .map(a -> a.name)
-                .toList();
+                .filter(c -> c.name().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Unable to find embedding model with name '" + name + "'"));
 
-        if (availableChatModels.contains(name)) {
-            OpenAiApi api = OpenAiApi
-                    .builder()
-                    .apiKey(genaiService.credentials().endpoint().apiKey())
-                    .baseUrl(genaiService.credentials.endpoint().apiBase() + "/" + endpoint.wireFormat().toLowerCase())
-                    .build();
+        OpenAiApi api = OpenAiApi
+                .builder()
+                .apiKey(connectivity.apiKey())
+                .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
+                .build();
 
-            return new OpenAiEmbeddingModel(api, MetadataMode.EMBED, OpenAiEmbeddingOptions.builder().model(name).build());
-        }
-
-        throw new RuntimeException("Unable to find embedding model with name '" + name + "'");
+        return new OpenAiEmbeddingModel(api, MetadataMode.EMBED, OpenAiEmbeddingOptions.builder().model(name).build());
     }
 
     @Override
     public EmbeddingModel getFirstAvailableEmbeddingModel() {
-        ConfigEndpoint endpoint = getEndpoint();
+        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
 
-        String firstChatModel = endpoint.advertisedModels
+        ModelConnectivity connectivity = models
                 .stream()
                 .filter(a -> a.capabilities().contains("EMBEDDING"))
-                .map(a -> a.name)
-                .toList().getFirst();
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Unable to find first embedding model"));
 
         OpenAiApi api = OpenAiApi
                 .builder()
-                .apiKey(genaiService.credentials().endpoint().apiKey())
-                .baseUrl(genaiService.credentials.endpoint().apiBase() + "/" + endpoint.wireFormat().toLowerCase())
+                .apiKey(connectivity.apiKey())
+                .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
                 .build();
 
-        return new OpenAiEmbeddingModel(api, MetadataMode.EMBED, OpenAiEmbeddingOptions.builder().model(firstChatModel).build());
+        return new OpenAiEmbeddingModel(api, MetadataMode.EMBED, OpenAiEmbeddingOptions.builder().model(connectivity.name()).build());
     }
 
     private Map<String, List<VcapService>> parse(String vcapServices) throws JsonProcessingException {
@@ -174,26 +169,58 @@ public class DefaultModelLocator implements ModelLocator {
         return mapper.readValue(vcapServices, new TypeReference<Map<String, List<VcapService>>>() {});
     }
 
-    private VcapService getGenAiService(String vcapServices) {
+    private List<ModelConnectivity> getAllConnectivityDetails(List<VcapService> services) {
+        return services
+                .stream()
+                .map(vs -> new AbstractMap.SimpleEntry<>(vs, getEndpoint(vs)) {})
+                .flatMap(e -> e.getValue().advertisedModels.stream().map( a -> new ModelConnectivity(
+                        a.name(),
+                        e.getValue().wireFormat(), a.capabilities(),
+                        e.getKey().credentials().endpoint().apiKey(),
+                        e.getKey().credentials().endpoint().apiBase())))
+                .toList();
+    }
+
+    private List<VcapService> getGenAiServices(String vcapServices) {
         try {
             Map<String, List<VcapService>> parsed = parse(vcapServices);
-            if (parsed.containsKey("genai")) {
-                return parsed.get("genai").get(0);
+            List<VcapService> services = parsed
+                    .values()
+                    .stream()
+                    .flatMap( s-> s.stream()
+                            .filter( g -> (g.tags != null && g.tags.contains("genai")) || g.label.equalsIgnoreCase("genai")))
+                    .toList();
+            if (!services.isEmpty()) {
+                return services;
             }
+
             throw new RuntimeException("Unable to find genai service, found '" + parsed.keySet() + "'");
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private ConfigEndpoint getEndpoint() {
-        RestClient client = RestClient.builder().build();
-        return client.get()
-                .uri(genaiService.credentials().endpoint().configUrl())
-                .header("Authorization", "Bearer " + genaiService.credentials().endpoint().apiKey())
-                .retrieve()
-                .body(ConfigEndpoint.class);
+    private ConfigEndpoint getEndpoint(VcapService service) {
+        if (service.credentials().endpoint() == null) {
+            // TODO we have the old style so no need to make the call
+            throw new RuntimeException("Unable to find credentials endpoint");
+        } else {
+            RestClient client = RestClient.builder().build();
+            return client.get()
+                    .uri(service.credentials().endpoint().configUrl())
+                    .header("Authorization", "Bearer " + service.credentials().endpoint().apiKey())
+                    .retrieve()
+                    .body(ConfigEndpoint.class);
+        }
     }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record ModelConnectivity(
+            String name,
+            String wireFormat,
+            List<String> capabilities,
+            String apiKey,
+            String apiBase) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record VcapService(
