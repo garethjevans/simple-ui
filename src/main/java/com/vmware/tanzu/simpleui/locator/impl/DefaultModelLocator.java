@@ -1,5 +1,6 @@
 package com.vmware.tanzu.simpleui.locator.impl;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -12,7 +13,6 @@ import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.ai.document.MetadataMode;
@@ -23,40 +23,19 @@ import java.util.Map;
 @Service
 public class DefaultModelLocator implements ModelLocator {
 
-    private final String vcapServices;
+    private final VcapService genaiService;
 
     public DefaultModelLocator() {
-        vcapServices = System.getenv("VCAP_SERVICES");
+        genaiService = getGenAiService(System.getenv("VCAP_SERVICES"));
     }
 
     public DefaultModelLocator(String vcapServices) {
-        this.vcapServices = vcapServices;
-    }
-
-    private Map<String, List<VcapService>> parse() throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(this.vcapServices, new TypeReference<Map<String, List<VcapService>>>() {});
-    }
-
-    private VcapService getGenAiService() {
-        // FIXME need to implement this properly
-        try {
-            return parse().get("genai").get(0);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        genaiService = getGenAiService(vcapServices);
     }
 
     @Override
     public List<String> getModelNames() {
-        VcapService genaiService = getGenAiService();
-
-        RestClient client = RestClient.builder().build();
-        ConfigEndpoint endpoint = client.get()
-                .uri(genaiService.credentials().endpoint().configUrl())
-                .header("Authorization", "Bearer " + genaiService.credentials().endpoint().apiKey())
-                .retrieve()
-                .body(ConfigEndpoint.class);
+        ConfigEndpoint endpoint = getEndpoint();
 
         return endpoint.advertisedModels
                 .stream()
@@ -66,14 +45,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public List<String> getModelNamesByCapability(String capability) {
-        VcapService genaiService = getGenAiService();
-
-        RestClient client = RestClient.builder().build();
-        ConfigEndpoint endpoint = client.get()
-                .uri(genaiService.credentials().endpoint().configUrl())
-                .header("Authorization", "Bearer " + genaiService.credentials().endpoint().apiKey())
-                .retrieve()
-                .body(ConfigEndpoint.class);
+        ConfigEndpoint endpoint = getEndpoint();
 
         return endpoint.advertisedModels
                 .stream()
@@ -84,14 +56,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public ChatModel getChatModelByName(String name) {
-        VcapService genaiService = getGenAiService();
-
-        RestClient client = RestClient.builder().build();
-        ConfigEndpoint endpoint = client.get()
-                .uri(genaiService.credentials().endpoint().configUrl())
-                .header("Authorization", "Bearer " + genaiService.credentials().endpoint().apiKey())
-                .retrieve()
-                .body(ConfigEndpoint.class);
+        ConfigEndpoint endpoint = getEndpoint();
 
         List<String> availableChatModels = endpoint.advertisedModels
                 .stream()
@@ -118,14 +83,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public ChatModel getFirstAvailableChatModel() {
-        VcapService genaiService = getGenAiService();
-
-        RestClient client = RestClient.builder().build();
-        ConfigEndpoint endpoint = client.get()
-                .uri(genaiService.credentials().endpoint().configUrl())
-                .header("Authorization", "Bearer " + genaiService.credentials().endpoint().apiKey())
-                .retrieve()
-                .body(ConfigEndpoint.class);
+        ConfigEndpoint endpoint = getEndpoint();
 
         String firstChatModel = endpoint.advertisedModels
                 .stream()
@@ -148,14 +106,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public ChatModel getFirstAvailableToolModel() {
-        VcapService genaiService = getGenAiService();
-
-        RestClient client = RestClient.builder().build();
-        ConfigEndpoint endpoint = client.get()
-                .uri(genaiService.credentials().endpoint().configUrl())
-                .header("Authorization", "Bearer " + genaiService.credentials().endpoint().apiKey())
-                .retrieve()
-                .body(ConfigEndpoint.class);
+        ConfigEndpoint endpoint = getEndpoint();
 
         String firstChatModel = endpoint.advertisedModels
                 .stream()
@@ -178,14 +129,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public EmbeddingModel getEmbeddingModelByName(String name) {
-        VcapService genaiService = getGenAiService();
-
-        RestClient client = RestClient.builder().build();
-        ConfigEndpoint endpoint = client.get()
-                .uri(genaiService.credentials().endpoint().configUrl())
-                .header("Authorization", "Bearer " + genaiService.credentials().endpoint().apiKey())
-                .retrieve()
-                .body(ConfigEndpoint.class);
+        ConfigEndpoint endpoint = getEndpoint();
 
         List<String> availableChatModels = endpoint.advertisedModels
                 .stream()
@@ -208,14 +152,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public EmbeddingModel getFirstAvailableEmbeddingModel() {
-        VcapService genaiService = getGenAiService();
-
-        RestClient client = RestClient.builder().build();
-        ConfigEndpoint endpoint = client.get()
-                .uri(genaiService.credentials().endpoint().configUrl())
-                .header("Authorization", "Bearer " + genaiService.credentials().endpoint().apiKey())
-                .retrieve()
-                .body(ConfigEndpoint.class);
+        ConfigEndpoint endpoint = getEndpoint();
 
         String firstChatModel = endpoint.advertisedModels
                 .stream()
@@ -232,15 +169,45 @@ public class DefaultModelLocator implements ModelLocator {
         return new OpenAiEmbeddingModel(api, MetadataMode.EMBED, OpenAiEmbeddingOptions.builder().model(firstChatModel).build());
     }
 
+    private Map<String, List<VcapService>> parse(String vcapServices) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(vcapServices, new TypeReference<Map<String, List<VcapService>>>() {});
+    }
 
+    private VcapService getGenAiService(String vcapServices) {
+        try {
+            Map<String, List<VcapService>> parsed = parse(vcapServices);
+            if (parsed.containsKey("genai")) {
+                return parsed.get("genai").get(0);
+            }
+            throw new RuntimeException("Unable to find genai service, found '" + parsed.keySet() + "'");
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ConfigEndpoint getEndpoint() {
+        RestClient client = RestClient.builder().build();
+        return client.get()
+                .uri(genaiService.credentials().endpoint().configUrl())
+                .header("Authorization", "Bearer " + genaiService.credentials().endpoint().apiKey())
+                .retrieve()
+                .body(ConfigEndpoint.class);
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private record VcapService(
             @JsonProperty("name") String name,
             @JsonProperty("label") String label,
+            @JsonProperty("plan") String plan,
+            @JsonProperty("tags") List<String> tags,
             @JsonProperty("credentials") VcapCredentials credentials) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private record VcapCredentials(
             @JsonProperty("endpoint") VcapEndpoint endpoint) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private record VcapEndpoint(
             @JsonProperty("name") String name,
             @JsonProperty("dashboard_url") String dashboardUrl,
@@ -248,12 +215,14 @@ public class DefaultModelLocator implements ModelLocator {
             @JsonProperty("api_base") String apiBase,
             @JsonProperty("config_url") String configUrl) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private record ConfigEndpoint(
             @JsonProperty("name") String name,
             @JsonProperty("description") String description,
             @JsonProperty("wireFormat") String wireFormat,
             @JsonProperty("advertisedModels") List<ConfigAdvertisedModel> advertisedModels) {}
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private record ConfigAdvertisedModel(
             @JsonProperty("name") String name,
             @JsonProperty("description") String description,

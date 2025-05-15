@@ -42,6 +42,23 @@ public class ModelLocatorTest {
                         }
                       }
                     }
+                  ],
+                  "solace-messaging": [
+                    {
+                      "name": "solmessaging-shared-instance",
+                      "label": "solace-messaging",
+                      "plan": "VMR-shared",
+                      "tags": [
+                        "solace",
+                        "rest",
+                        "mqtt"
+                      ],
+                      "credentials": {
+                        "clientUsername": "user1",
+                        "clientPassword": "password1",
+                        "jmsJndiTlsUri": "smf://host:port"
+                      }
+                    }
                   ]
                 }
                 """.replace("PORT", Integer.toString(wireMockServer.port())));
