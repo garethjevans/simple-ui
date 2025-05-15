@@ -173,11 +173,21 @@ public class DefaultModelLocator implements ModelLocator {
         return services
                 .stream()
                 .map(vs -> new AbstractMap.SimpleEntry<>(vs, getEndpoint(vs)) {})
-                .flatMap(e -> e.getValue().advertisedModels.stream().map( a -> new ModelConnectivity(
-                        a.name(),
-                        e.getValue().wireFormat(), a.capabilities(),
-                        e.getKey().credentials().endpoint().apiKey(),
-                        e.getKey().credentials().endpoint().apiBase())))
+                .flatMap(e -> e.getValue().advertisedModels.stream().map( a -> {
+                    if (e.getKey().credentials().endpoint() != null) {
+                        return new ModelConnectivity(
+                                a.name(),
+                                e.getValue().wireFormat(), a.capabilities(),
+                                e.getKey().credentials().endpoint().apiKey(),
+                                e.getKey().credentials().endpoint().apiBase());
+                    } else {
+                        return new ModelConnectivity(
+                                a.name(),
+                                e.getValue().wireFormat(), a.capabilities(),
+                                e.getKey().credentials().apiKey(),
+                                e.getKey().credentials().apiBase());
+                    }
+                }))
                 .toList();
     }
 
@@ -202,8 +212,14 @@ public class DefaultModelLocator implements ModelLocator {
 
     private ConfigEndpoint getEndpoint(VcapService service) {
         if (service.credentials().endpoint() == null) {
-            // TODO we have the old style so no need to make the call
-            throw new RuntimeException("Unable to find credentials endpoint");
+            return new ConfigEndpoint(
+                    service.credentials().modelName(),
+                    "",
+                    service.credentials().wireFormat().toUpperCase(),
+                    List.of(new ConfigAdvertisedModel(
+                            service.credentials().modelName(),
+                            "",
+                            service.credentials().modelCapabilities().stream().map(String::toUpperCase).toList())));
         } else {
             RestClient client = RestClient.builder().build();
             return client.get()
@@ -232,7 +248,12 @@ public class DefaultModelLocator implements ModelLocator {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record VcapCredentials(
-            @JsonProperty("endpoint") VcapEndpoint endpoint) {}
+            @JsonProperty("endpoint") VcapEndpoint endpoint,
+            @Deprecated @JsonProperty("model_name") String modelName,
+            @Deprecated @JsonProperty("wire_format") String wireFormat,
+            @Deprecated @JsonProperty("model_capabilities") List<String> modelCapabilities,
+            @Deprecated @JsonProperty("api_key") String apiKey,
+            @Deprecated @JsonProperty("api_base") String apiBase) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record VcapEndpoint(
