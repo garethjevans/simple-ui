@@ -14,6 +14,7 @@ import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.ai.document.MetadataMode;
 
@@ -27,7 +28,15 @@ public class DefaultModelLocator implements ModelLocator {
     private final List<VcapService> genaiServices;
 
     public DefaultModelLocator() {
-        genaiServices = getGenAiServices(System.getenv("VCAP_SERVICES"));
+        String vcapServices = System.getenv("VCAP_SERVICES");
+        if (!StringUtils.hasText(vcapServices)) {
+            throw new RuntimeException("No VCAP_SERVICES found");
+        }
+        genaiServices = getGenAiServices(vcapServices);
+
+        if (genaiServices.isEmpty()) {
+            throw new RuntimeException("No genai services found");
+        }
     }
 
     public DefaultModelLocator(String vcapServices) {
