@@ -267,7 +267,6 @@ public class DefaultModelLocator implements ModelLocator {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record VcapEndpoint(
             @JsonProperty("name") String name,
-            @JsonProperty("dashboard_url") String dashboardUrl,
             @JsonProperty("api_key") String apiKey,
             @JsonProperty("api_base") String apiBase,
             @JsonProperty("config_url") String configUrl) {}

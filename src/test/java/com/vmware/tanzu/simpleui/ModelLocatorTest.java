@@ -36,8 +36,7 @@ public class ModelLocatorTest {
                           "api_base": "http://localhost:PORT/test",
                           "name": "test",
                           "api_key": "fake-jwt-token",
-                          "config_url": "http://localhost:PORT/test/config/v1/endpoint",
-                          "dashboard_url": "http://localhost:PORT/ui/endpoint/test"
+                          "config_url": "http://localhost:PORT/test/config/v1/endpoint"
                         }
                       }
                     },
@@ -49,8 +48,7 @@ public class ModelLocatorTest {
                           "api_base": "http://localhost:PORT/other",
                           "name": "other",
                           "api_key": "other-fake-jwt-token",
-                          "config_url": "http://localhost:PORT/other/config/v1/endpoint",
-                          "dashboard_url": "http://localhost:PORT/ui/endpoint/other"
+                          "config_url": "http://localhost:PORT/other/config/v1/endpoint"
                         }
                       }
                     }
