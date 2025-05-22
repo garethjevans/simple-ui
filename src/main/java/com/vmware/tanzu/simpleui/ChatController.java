@@ -1,11 +1,12 @@
 package com.vmware.tanzu.simpleui;
 
-import com.vmware.tanzu.simpleui.model.ModelResolver;
+import com.vmware.tanzu.simpleui.locator.ModelLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.retry.NonTransientAiException;
@@ -24,15 +25,20 @@ public class ChatController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatController.class);
 
-    private final ModelResolver modelResolver;
-    private final ChatClient client;
+    private final ModelLocator modelLocator;
+    private final ToolCallbackProvider toolCallbackProvider;
 
     private static final DecimalFormat df = new DecimalFormat("0.00");
 
-    public ChatController(ChatClient.Builder chatClientBuilder, ModelResolver modelResolver, ToolCallbackProvider toolCallbackProvider) {
+    public ChatController(ModelLocator modelLocator, ToolCallbackProvider toolCallbackProvider) {
         LOGGER.info("using ToolCallbackProvider {}", toolCallbackProvider);
+        this.toolCallbackProvider = toolCallbackProvider;
+        this.modelLocator = modelLocator;
+    }
 
-        this.modelResolver = modelResolver;
+    @PostMapping(path={"/chat"})
+    public ChatResponse sendMessage(@RequestBody ChatRequest request) {
+        LOGGER.info("Got request: {}", request);
 
         if (toolCallbackProvider != null) {
             var callbacks = toolCallbackProvider.getToolCallbacks();
@@ -41,14 +47,11 @@ public class ChatController {
             }
         }
 
-        client = chatClientBuilder
+        ChatModel chatModel = modelLocator.getChatModelByName(request.model());
+        ChatClient client = ChatClient.builder(chatModel)
                 .defaultToolCallbacks(toolCallbackProvider)
                 .build();
-    }
 
-    @PostMapping(path={"/chat"})
-    public ChatResponse sendMessage(@RequestBody ChatRequest request) {
-        LOGGER.info("Got request: {}", request);
         try {
             long start = System.currentTimeMillis();
             var response = client.
@@ -85,7 +88,7 @@ public class ChatController {
     @GetMapping(path={"/models"})
     public List<String> models() {
         LOGGER.info("Listing models");
-        return modelResolver.availableModels();
+        return modelLocator.getModelNamesByCapability("CHAT");
     }
 
     private List<org.springframework.ai.chat.messages.Message> convertMessages(ChatRequest request) {
