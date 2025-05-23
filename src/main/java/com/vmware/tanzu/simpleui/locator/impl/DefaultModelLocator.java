@@ -6,14 +6,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.tanzu.simpleui.locator.ModelLocator;
+import io.modelcontextprotocol.client.McpClient;
+import io.modelcontextprotocol.client.McpSyncClient;
+import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
-import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.ai.document.MetadataMode;
@@ -22,7 +25,6 @@ import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
 public class DefaultModelLocator implements ModelLocator {
 
     private final List<VcapService> genaiServices;
@@ -45,7 +47,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public List<String> getModelNames() {
-        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
+        List<ModelConnectivity> models = getAllModelConnectivityDetails(genaiServices);
 
         return models
                 .stream()
@@ -55,7 +57,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public List<String> getModelNamesByCapability(String capability) {
-        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
+        List<ModelConnectivity> models = getAllModelConnectivityDetails(genaiServices);
 
         return models
                 .stream()
@@ -66,7 +68,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public ChatModel getChatModelByName(String name) {
-        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
+        List<ModelConnectivity> models = getAllModelConnectivityDetails(genaiServices);
 
         ModelConnectivity connectivity = models
                 .stream()
@@ -90,7 +92,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public ChatModel getFirstAvailableChatModel() {
-        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
+        List<ModelConnectivity> models = getAllModelConnectivityDetails(genaiServices);
 
         ModelConnectivity connectivity = models
                 .stream()
@@ -113,7 +115,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public ChatModel getFirstAvailableToolModel() {
-        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
+        List<ModelConnectivity> models = getAllModelConnectivityDetails(genaiServices);
 
         ModelConnectivity connectivity = models
                 .stream()
@@ -136,7 +138,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public EmbeddingModel getEmbeddingModelByName(String name) {
-        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
+        List<ModelConnectivity> models = getAllModelConnectivityDetails(genaiServices);
 
         ModelConnectivity connectivity = models
                 .stream()
@@ -156,7 +158,7 @@ public class DefaultModelLocator implements ModelLocator {
 
     @Override
     public EmbeddingModel getFirstAvailableEmbeddingModel() {
-        List<ModelConnectivity> models = getAllConnectivityDetails(genaiServices);
+        List<ModelConnectivity> models = getAllModelConnectivityDetails(genaiServices);
 
         ModelConnectivity connectivity = models
                 .stream()
@@ -173,12 +175,17 @@ public class DefaultModelLocator implements ModelLocator {
         return new OpenAiEmbeddingModel(api, MetadataMode.EMBED, OpenAiEmbeddingOptions.builder().model(connectivity.name()).build());
     }
 
+    @Override
+    public List<McpConnectivity> getMcpServers() {
+        return getAllMcpConnectivityDetails(genaiServices);
+    }
+
     private Map<String, List<VcapService>> parse(String vcapServices) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(vcapServices, new TypeReference<Map<String, List<VcapService>>>() {});
     }
 
-    private List<ModelConnectivity> getAllConnectivityDetails(List<VcapService> services) {
+    private List<ModelConnectivity> getAllModelConnectivityDetails(List<VcapService> services) {
         return services
                 .stream()
                 .map(vs -> new AbstractMap.SimpleEntry<>(vs, getEndpoint(vs)) {})
@@ -199,6 +206,17 @@ public class DefaultModelLocator implements ModelLocator {
                 }))
                 .toList();
     }
+
+    private List<McpConnectivity> getAllMcpConnectivityDetails(List<VcapService> services) {
+        return services
+                .stream()
+                .map(vs -> new AbstractMap.SimpleEntry<>(vs, getEndpoint(vs)) {})
+                .flatMap(e -> e.getValue().mcpServers().stream().map( m -> {
+                    return new McpConnectivity(m.url());
+                }))
+                .toList();
+    }
+
 
     private List<VcapService> getGenAiServices(String vcapServices) {
         try {
@@ -228,7 +246,8 @@ public class DefaultModelLocator implements ModelLocator {
                     List.of(new ConfigAdvertisedModel(
                             service.credentials().modelName(),
                             "",
-                            service.credentials().modelCapabilities().stream().map(String::toUpperCase).toList())));
+                            service.credentials().modelCapabilities().stream().map(String::toUpperCase).toList())),
+                    List.of());
         } else {
             RestClient client = RestClient.builder().build();
             return client.get()
@@ -246,6 +265,10 @@ public class DefaultModelLocator implements ModelLocator {
             List<String> capabilities,
             String apiKey,
             String apiBase) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record McpConnectivity(
+            String url) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record VcapService(
@@ -276,11 +299,16 @@ public class DefaultModelLocator implements ModelLocator {
             @JsonProperty("name") String name,
             @JsonProperty("description") String description,
             @JsonProperty("wireFormat") String wireFormat,
-            @JsonProperty("advertisedModels") List<ConfigAdvertisedModel> advertisedModels) {}
+            @JsonProperty("advertisedModels") List<ConfigAdvertisedModel> advertisedModels,
+            @JsonProperty("mcpServers") List<ConfigMcpServer> mcpServers) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record ConfigAdvertisedModel(
             @JsonProperty("name") String name,
             @JsonProperty("description") String description,
             @JsonProperty("capabilities") List<String> capabilities) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private record ConfigMcpServer(
+            @JsonProperty("url") String url) {}
 }

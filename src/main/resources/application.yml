@@ -12,6 +12,8 @@ spring:
     mcp:
       client:
         enabled: true
+        toolcallback:
+          enabled: true
         type: SYNC
 
 server:
