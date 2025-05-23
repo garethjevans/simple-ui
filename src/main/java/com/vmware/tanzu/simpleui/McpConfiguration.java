@@ -3,18 +3,24 @@ package com.vmware.tanzu.simpleui;
 import com.vmware.tanzu.simpleui.locator.ModelLocator;
 import com.vmware.tanzu.simpleui.locator.impl.DefaultModelLocator;
 import io.modelcontextprotocol.client.McpClient;
+import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
+import org.springframework.ai.mcp.client.autoconfigure.NamedClientMcpTransport;
+import org.springframework.ai.mcp.client.autoconfigure.properties.McpClientCommonProperties;
 import org.springframework.ai.mcp.customizer.McpSyncClientCustomizer;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -77,15 +83,36 @@ public class McpConfiguration {
     }
 
     @Bean
-    public List<SyncMcpToolCallbackProvider> getMcpToolCallbackProviders(ModelLocator modelLocator, McpSyncClientCustomizer samplingCustomizer) {
-        return modelLocator.getMcpServers()
+    public SyncMcpToolCallbackProvider getMcpSyncClients(ModelLocator modelLocator, ObjectProvider<List<McpSyncClient>> syncMcpClients, McpSyncClientCustomizer samplingCustomizer) {
+        List<McpSyncClient> springConfigured = syncMcpClients.stream().flatMap(List::stream).toList();
+
+        List<McpSyncClient> aiServerConfigured = modelLocator.getMcpServers()
                 .stream()
-                .map(m -> new SyncMcpToolCallbackProvider(
-                        McpClient.sync(HttpClientSseClientTransport
-                                .builder(m.url())
-                                .build())
-                                .build()
-                ))
+                .map(m -> {
+
+                    var transport = HttpClientSseClientTransport
+                            .builder(m.url())
+                            .build();
+
+                    NamedClientMcpTransport namedTransport = new NamedClientMcpTransport(m.url(), transport);
+
+                    McpClient.SyncSpec spec = McpClient.sync(namedTransport.transport());
+
+                    samplingCustomizer.customize(namedTransport.name(), spec);
+
+                    var client = spec.build();
+
+                    client.initialize();
+
+                    return client;
+                }
+                )
                 .toList();
+
+        List<McpSyncClient> all = new ArrayList<>();
+        all.addAll(springConfigured);
+        all.addAll(aiServerConfigured);
+
+        return new SyncMcpToolCallbackProvider(all);
     }
 }

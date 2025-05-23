@@ -13,7 +13,7 @@ spring:
       client:
         enabled: true
         toolcallback:
-          enabled: true
+          enabled: false
         type: SYNC
 
 server:
