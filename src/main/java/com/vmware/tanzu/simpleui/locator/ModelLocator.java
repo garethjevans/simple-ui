@@ -1,7 +1,9 @@
 package com.vmware.tanzu.simpleui.locator;
 
+import com.vmware.tanzu.simpleui.locator.impl.DefaultModelLocator;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 
 import java.util.List;
 
@@ -20,5 +22,7 @@ public interface ModelLocator {
     EmbeddingModel getEmbeddingModelByName(String name);
 
     EmbeddingModel getFirstAvailableEmbeddingModel();
+
+    List<DefaultModelLocator.McpConnectivity> getMcpServers();
 
 }
