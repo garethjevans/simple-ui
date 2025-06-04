@@ -6,12 +6,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.tanzu.simpleui.locator.ModelLocator;
-import io.modelcontextprotocol.client.McpClient;
-import io.modelcontextprotocol.client.McpSyncClient;
-import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
@@ -211,6 +207,7 @@ public class DefaultModelLocator implements ModelLocator {
         return services
                 .stream()
                 .map(vs -> new AbstractMap.SimpleEntry<>(vs, getEndpoint(vs)) {})
+                .filter(e -> e.getValue().mcpServers() != null)
                 .flatMap(e -> e.getValue().mcpServers().stream().map( m -> {
                     return new McpConnectivity(m.url());
                 }))
@@ -300,15 +297,16 @@ public class DefaultModelLocator implements ModelLocator {
             @JsonProperty("description") String description,
             @JsonProperty("wireFormat") String wireFormat,
             @JsonProperty("advertisedModels") List<ConfigAdvertisedModel> advertisedModels,
-            @JsonProperty("mcpServers") List<ConfigMcpServer> mcpServers) {}
+            @JsonProperty("advertisedMcpServers") List<ConfigAdvertisedMcpServer> advertisedMcpServers) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record ConfigAdvertisedModel(
             @JsonProperty("name") String name,
             @JsonProperty("description") String description,
-            @JsonProperty("capabilities") List<String> capabilities) {}
+            @JsonProperty("capabilities") List<String> capabilities,
+            @JsonProperty("labels") Map<String, String> labels) {}
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record ConfigMcpServer(
+    private record ConfigAdvertisedMcpServer(
             @JsonProperty("url") String url) {}
 }
