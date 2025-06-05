@@ -7,8 +7,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.tanzu.simpleui.locator.ModelLocator;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -22,17 +26,21 @@ import org.springframework.web.client.RestClient;
 
 public class DefaultModelLocator implements ModelLocator {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultModelLocator.class);
+
   private final List<VcapService> genaiServices;
 
   public DefaultModelLocator() {
     String vcapServices = System.getenv("VCAP_SERVICES");
     if (!StringUtils.hasText(vcapServices)) {
-      throw new RuntimeException("No VCAP_SERVICES found");
-    }
-    genaiServices = getGenAiServices(vcapServices);
+      LOGGER.warn("No VCAP_SERVICES found");
+      genaiServices = new ArrayList<>();
+    } else {
+      genaiServices = getGenAiServices(vcapServices);
 
-    if (genaiServices.isEmpty()) {
-      throw new RuntimeException("No genai services found");
+      if (genaiServices.isEmpty()) {
+        LOGGER.warn("No genai services found");
+      }
     }
   }
 
