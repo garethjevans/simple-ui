@@ -10,7 +10,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
@@ -37,7 +36,7 @@ public class DefaultModelLocator implements ModelLocator {
       LOGGER.warn("No VCAP_SERVICES found");
 
       // lets fall back on open ai properties
-      String openAiKey = System.getenv("OPENAI_KEY");
+      String openAiKey = System.getenv("OPENAI_API_KEY");
       String openAiBaseUrl = System.getenv("OPENAI_BASE_URL");
       if (!StringUtils.hasText(openAiBaseUrl)) {
         openAiBaseUrl = "https://api.openai.com/";
@@ -46,13 +45,9 @@ public class DefaultModelLocator implements ModelLocator {
       genaiServices = new ArrayList<>();
 
       // String name, String wireFormat, List<String> capabilities, String apiKey, String apiBase
-      staticConnectivity = new ModelConnectivity(
-        openAiModel,
-              null,
-              List.of("CHAT", "TOOLS"),
-              openAiKey,
-              openAiBaseUrl
-      );
+      staticConnectivity =
+          new ModelConnectivity(
+              openAiModel, null, List.of("CHAT", "TOOLS"), openAiKey, openAiBaseUrl);
     } else {
       genaiServices = getGenAiServices(vcapServices);
       staticConnectivity = null;
@@ -97,10 +92,7 @@ public class DefaultModelLocator implements ModelLocator {
                 () -> new RuntimeException("Unable to find chat model with name '" + name + "'"));
 
     OpenAiApi api =
-        OpenAiApi.builder()
-            .apiKey(connectivity.apiKey())
-            .baseUrl(getBaseUrl(connectivity))
-            .build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
 
     return OpenAiChatModel.builder()
         .defaultOptions(OpenAiChatOptions.builder().model(name).build())
@@ -119,10 +111,7 @@ public class DefaultModelLocator implements ModelLocator {
             .orElseThrow(() -> new RuntimeException("Unable to find first chat model"));
 
     OpenAiApi api =
-        OpenAiApi.builder()
-            .apiKey(connectivity.apiKey())
-            .baseUrl(getBaseUrl(connectivity))
-            .build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
 
     return OpenAiChatModel.builder()
         .defaultOptions(OpenAiChatOptions.builder().model(connectivity.name()).build())
@@ -141,10 +130,7 @@ public class DefaultModelLocator implements ModelLocator {
             .orElseThrow(() -> new RuntimeException("Unable to find first chat model"));
 
     OpenAiApi api =
-        OpenAiApi.builder()
-            .apiKey(connectivity.apiKey())
-            .baseUrl(getBaseUrl(connectivity))
-            .build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
 
     return OpenAiChatModel.builder()
         .defaultOptions(OpenAiChatOptions.builder().model(connectivity.name()).build())
@@ -167,10 +153,7 @@ public class DefaultModelLocator implements ModelLocator {
                         "Unable to find embedding model with name '" + name + "'"));
 
     OpenAiApi api =
-        OpenAiApi.builder()
-            .apiKey(connectivity.apiKey())
-            .baseUrl(getBaseUrl(connectivity))
-            .build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
 
     return new OpenAiEmbeddingModel(
         api, MetadataMode.EMBED, OpenAiEmbeddingOptions.builder().model(name).build());
@@ -187,10 +170,7 @@ public class DefaultModelLocator implements ModelLocator {
             .orElseThrow(() -> new RuntimeException("Unable to find first embedding model"));
 
     OpenAiApi api =
-        OpenAiApi.builder()
-            .apiKey(connectivity.apiKey())
-            .baseUrl(getBaseUrl(connectivity))
-            .build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
 
     return new OpenAiEmbeddingModel(
         api,
