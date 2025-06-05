@@ -1,0 +1,6 @@
+applications:
+- name: Simple-UI
+  path: target/simpleui-0.0.1-SNAPSHOT.jar
+  env:
+   JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 21.+ } }'
+  instances: 1
