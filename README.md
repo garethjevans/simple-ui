@@ -4,6 +4,16 @@ A very simple chat ui that can be used to test Spring-AI/Tanzu AI Server (or any
 
 Then access the UI in the browser at http://localhost:9091
 
+## Run locally against any OpenAI endpoint
+
+```shell
+export OPENAI_API_KEY=...
+export OPENAI_BASE_URL=...
+export OPENAI_MODEL=...
+
+./mvnw spring-boot:run
+```
+
 ## Run locally against Tanzu AI Server
 
 ```shell
@@ -21,7 +31,7 @@ Then access the UI in the browser at http://localhost:8080
 ## Run on CF
 
 ```shell
-./mvnw clean spring-boot:run
+TODO...
 ```
 
 NOTE: when `cf push`'ing the application, VCAP_SERVICES will be created for you.
