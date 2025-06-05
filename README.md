@@ -31,7 +31,12 @@ Then access the UI in the browser at http://localhost:8080
 ## Run on CF
 
 ```shell
-TODO...
+./mvnw package -DskipTests
+cf push simple-ui --path target/simple-ui--0.0.1-SNAPSHOT.jar --no-start
+cf set-env simple-ui JBP_CONFIG_OPEN_JDK_JRE '{ jre: { version: 21.+ } }'
+cf create-service genai ...
+cf bind-service ...
+cf restage simple-ui
 ```
 
 NOTE: when `cf push`'ing the application, VCAP_SERVICES will be created for you.
