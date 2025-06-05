@@ -29,14 +29,33 @@ public class DefaultModelLocator implements ModelLocator {
   private static final Logger LOGGER = LoggerFactory.getLogger(DefaultModelLocator.class);
 
   private final List<VcapService> genaiServices;
+  private ModelConnectivity staticConnectivity;
 
   public DefaultModelLocator() {
     String vcapServices = System.getenv("VCAP_SERVICES");
     if (!StringUtils.hasText(vcapServices)) {
       LOGGER.warn("No VCAP_SERVICES found");
+
+      // lets fall back on open ai properties
+      String openAiKey = System.getenv("OPENAI_KEY");
+      String openAiBaseUrl = System.getenv("OPENAI_BASE_URL");
+      if (!StringUtils.hasText(openAiBaseUrl)) {
+        openAiBaseUrl = "https://api.openai.com/";
+      }
+      String openAiModel = System.getenv("OPENAI_MODEL");
       genaiServices = new ArrayList<>();
+
+      // String name, String wireFormat, List<String> capabilities, String apiKey, String apiBase
+      staticConnectivity = new ModelConnectivity(
+        openAiModel,
+              null,
+              List.of("CHAT", "TOOLS"),
+              openAiKey,
+              openAiBaseUrl
+      );
     } else {
       genaiServices = getGenAiServices(vcapServices);
+      staticConnectivity = null;
 
       if (genaiServices.isEmpty()) {
         LOGGER.warn("No genai services found");
@@ -80,7 +99,7 @@ public class DefaultModelLocator implements ModelLocator {
     OpenAiApi api =
         OpenAiApi.builder()
             .apiKey(connectivity.apiKey())
-            .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
+            .baseUrl(getBaseUrl(connectivity))
             .build();
 
     return OpenAiChatModel.builder()
@@ -102,7 +121,7 @@ public class DefaultModelLocator implements ModelLocator {
     OpenAiApi api =
         OpenAiApi.builder()
             .apiKey(connectivity.apiKey())
-            .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
+            .baseUrl(getBaseUrl(connectivity))
             .build();
 
     return OpenAiChatModel.builder()
@@ -124,7 +143,7 @@ public class DefaultModelLocator implements ModelLocator {
     OpenAiApi api =
         OpenAiApi.builder()
             .apiKey(connectivity.apiKey())
-            .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
+            .baseUrl(getBaseUrl(connectivity))
             .build();
 
     return OpenAiChatModel.builder()
@@ -150,7 +169,7 @@ public class DefaultModelLocator implements ModelLocator {
     OpenAiApi api =
         OpenAiApi.builder()
             .apiKey(connectivity.apiKey())
-            .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
+            .baseUrl(getBaseUrl(connectivity))
             .build();
 
     return new OpenAiEmbeddingModel(
@@ -170,13 +189,20 @@ public class DefaultModelLocator implements ModelLocator {
     OpenAiApi api =
         OpenAiApi.builder()
             .apiKey(connectivity.apiKey())
-            .baseUrl(connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase())
+            .baseUrl(getBaseUrl(connectivity))
             .build();
 
     return new OpenAiEmbeddingModel(
         api,
         MetadataMode.EMBED,
         OpenAiEmbeddingOptions.builder().model(connectivity.name()).build());
+  }
+
+  private static String getBaseUrl(ModelConnectivity connectivity) {
+    if (connectivity.wireFormat() == null) {
+      return connectivity.apiBase();
+    }
+    return connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase();
   }
 
   @Override
@@ -190,6 +216,9 @@ public class DefaultModelLocator implements ModelLocator {
   }
 
   private List<ModelConnectivity> getAllModelConnectivityDetails(List<VcapService> services) {
+    if (staticConnectivity != null) {
+      return List.of(staticConnectivity);
+    }
     return services.stream()
         .map(vs -> new AbstractMap.SimpleEntry<>(vs, getEndpoint(vs)) {})
         .flatMap(
