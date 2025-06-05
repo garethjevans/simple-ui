@@ -46,8 +46,7 @@ public class DefaultModelLocator implements ModelLocator {
 
       // String name, String wireFormat, List<String> capabilities, String apiKey, String apiBase
       staticConnectivity =
-          new ModelConnectivity(
-              openAiModel, null, List.of("CHAT", "TOOLS"), openAiKey, openAiBaseUrl);
+          new ModelConnectivity(openAiModel, List.of("CHAT", "TOOLS"), openAiKey, openAiBaseUrl);
     } else {
       genaiServices = getGenAiServices(vcapServices);
       staticConnectivity = null;
@@ -92,7 +91,7 @@ public class DefaultModelLocator implements ModelLocator {
                 () -> new RuntimeException("Unable to find chat model with name '" + name + "'"));
 
     OpenAiApi api =
-        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(connectivity.baseUrl()).build();
 
     return OpenAiChatModel.builder()
         .defaultOptions(OpenAiChatOptions.builder().model(name).build())
@@ -111,7 +110,7 @@ public class DefaultModelLocator implements ModelLocator {
             .orElseThrow(() -> new RuntimeException("Unable to find first chat model"));
 
     OpenAiApi api =
-        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(connectivity.baseUrl()).build();
 
     return OpenAiChatModel.builder()
         .defaultOptions(OpenAiChatOptions.builder().model(connectivity.name()).build())
@@ -130,7 +129,7 @@ public class DefaultModelLocator implements ModelLocator {
             .orElseThrow(() -> new RuntimeException("Unable to find first chat model"));
 
     OpenAiApi api =
-        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(connectivity.baseUrl()).build();
 
     return OpenAiChatModel.builder()
         .defaultOptions(OpenAiChatOptions.builder().model(connectivity.name()).build())
@@ -153,7 +152,7 @@ public class DefaultModelLocator implements ModelLocator {
                         "Unable to find embedding model with name '" + name + "'"));
 
     OpenAiApi api =
-        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(connectivity.baseUrl()).build();
 
     return new OpenAiEmbeddingModel(
         api, MetadataMode.EMBED, OpenAiEmbeddingOptions.builder().model(name).build());
@@ -170,19 +169,12 @@ public class DefaultModelLocator implements ModelLocator {
             .orElseThrow(() -> new RuntimeException("Unable to find first embedding model"));
 
     OpenAiApi api =
-        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(getBaseUrl(connectivity)).build();
+        OpenAiApi.builder().apiKey(connectivity.apiKey()).baseUrl(connectivity.baseUrl()).build();
 
     return new OpenAiEmbeddingModel(
         api,
         MetadataMode.EMBED,
         OpenAiEmbeddingOptions.builder().model(connectivity.name()).build());
-  }
-
-  private static String getBaseUrl(ModelConnectivity connectivity) {
-    if (connectivity.wireFormat() == null) {
-      return connectivity.apiBase();
-    }
-    return connectivity.apiBase() + "/" + connectivity.wireFormat().toLowerCase();
   }
 
   @Override
@@ -209,14 +201,15 @@ public class DefaultModelLocator implements ModelLocator {
                           if (e.getKey().credentials().endpoint() != null) {
                             return new ModelConnectivity(
                                 a.name(),
-                                e.getValue().wireFormat(),
                                 a.capabilities(),
                                 e.getKey().credentials().endpoint().apiKey(),
-                                e.getKey().credentials().endpoint().apiBase());
+                                e.getKey().credentials().endpoint().apiBase()
+                                    + "/"
+                                    + e.getValue().wireFormat().toLowerCase());
                           } else {
+                            // this is an old style binding
                             return new ModelConnectivity(
                                 a.name(),
-                                e.getValue().wireFormat(),
                                 a.capabilities(),
                                 e.getKey().credentials().apiKey(),
                                 e.getKey().credentials().apiBase());
@@ -290,7 +283,7 @@ public class DefaultModelLocator implements ModelLocator {
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   private record ModelConnectivity(
-      String name, String wireFormat, List<String> capabilities, String apiKey, String apiBase) {}
+      String name, List<String> capabilities, String apiKey, String baseUrl) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   public record McpConnectivity(String url) {}

@@ -32,7 +32,7 @@ Then access the UI in the browser at http://localhost:8080
 
 ```shell
 ./mvnw package -DskipTests
-cf push simple-ui --path target/simple-ui--0.0.1-SNAPSHOT.jar --no-start
+cf push simple-ui --path target/simpleui-0.0.1-SNAPSHOT.jar --no-start
 cf set-env simple-ui JBP_CONFIG_OPEN_JDK_JRE '{ jre: { version: 21.+ } }'
 cf create-service genai ...
 cf bind-service ...
