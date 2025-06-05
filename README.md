@@ -2,38 +2,25 @@
 
 A very simple chat ui that can be used to test Spring-AI/Tanzu AI Server (or any OpenAI compatible endpoint)
 
-## Run against OpenAI
+Then access the UI in the browser at http://localhost:9091
+
+## Run locally against Tanzu AI Server
 
 ```shell
-export SPRING_AI_OPENAI_API_KEY=xxx
+export ENDPOINT_NAME=test
+export API_KEY=<key>
+export API_BASE=http://<ai-server-url>/$ENDPOINT_NAME
+export CONFIG_URL=$API_BASE/config/v1/endpoint
+export VCAP_SERVICES='{"genai":[{ "name":"genai","label":"genai","credentials":{"endpoint":{"api_base":"'"$API_BASE"'","name":"test","api_key":"'"$API_KEY"'","config_url":"'"$CONFIG_URL"'"}}}]}'
+
 ./mvnw spring-boot:run
 ```
 
 Then access the UI in the browser at http://localhost:8080
-
-## Run against Tanzu AI Server
-
-```shell
-export SPRING_AI_OPENAI_API_KEY=xxx
-export SPRING_AI_OPENAI_CHAT_BASE_URL=yyy
-./mvnw spring-boot:run
-```
-
-Then access the UI in the browser at http://localhost:8080
-
-## Run with a local MCP server
-
-```shell
-export SPRING_AI_OPENAI_API_KEY=xxx
-export SPRING_AI_OPENAI_CHAT_BASE_URL=yyy
-export SPRING_AI_MCP_CLIENT_STDIO_SERVERS_CONFIGURATION=file://$PWD/../servers.json 
-./mvnw clean spring-boot:run
-```
 
 ## Run on CF
 
 ```shell
-export VCAP_SERVICES=...
 ./mvnw clean spring-boot:run
 ```
 
