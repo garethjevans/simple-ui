@@ -19,8 +19,6 @@ import org.springframework.ai.mcp.customizer.McpSyncClientCustomizer;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
 
 @Configuration
 public class McpConfiguration {
@@ -67,18 +65,10 @@ public class McpConfiguration {
                       .findFirst()
                       .orElseThrow()
                       .getValue();
+
             } else {
-              String model =
-                  (String)
-                      RequestContextHolder.getRequestAttributes()
-                          .getAttribute("model", RequestAttributes.SCOPE_REQUEST);
-              if (model != null) {
-                LOGGER.info("No hints, trying to get {}", model);
-                chatClient = chatClients.get(model);
-              } else {
-                LOGGER.info("No hints, returning the first");
-                chatClient = chatClients.values().stream().findFirst().orElse(null);
-              }
+              LOGGER.info("No hints, returning the first");
+              chatClient = chatClients.values().stream().findFirst().orElse(null);
             }
 
             String response =
