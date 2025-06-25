@@ -4,6 +4,9 @@ import com.vmware.tanzu.simpleui.locator.ModelLocator;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -75,6 +78,7 @@ public class ChatController {
       String model = response.getMetadata().getModel();
       String responseText = response.getResult().getOutput().getText();
       responseText = responseText.replace("<", "&lt;").replace(">", "&gt;");
+      responseText = toHtml(responseText);
       org.springframework.ai.chat.metadata.Usage usage = response.getMetadata().getUsage();
 
       long end = System.currentTimeMillis();
@@ -100,6 +104,13 @@ public class ChatController {
   public List<String> models() {
     LOGGER.info("Listing models");
     return modelLocator.getModelNamesByCapability("CHAT");
+  }
+
+  private String toHtml(String in) {
+    Parser parser = Parser.builder().build();
+    Node document = parser.parse(in);
+    HtmlRenderer renderer = HtmlRenderer.builder().build();
+    return renderer.render(document);
   }
 
   private List<org.springframework.ai.chat.messages.Message> convertMessages(ChatRequest request) {
