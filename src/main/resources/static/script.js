@@ -8,7 +8,6 @@ const modelsSelect = get(".models")
 const PERSON_NAME = "user";
 
 var conversation = {messages:[]}
-var converter = new showdown.Converter();
 
 var msgText = ""
 
@@ -128,7 +127,7 @@ const userAction = async () => {
   appendMessage(role,
       "fa-desktop",
       "left",
-      converter.makeHtml(myJson.messages[0].message),
+      myJson.messages[0].message,
       myJson.usage);
 }
 
