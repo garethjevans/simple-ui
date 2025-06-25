@@ -192,7 +192,7 @@ public class DefaultModelLocator implements ModelLocator {
       return List.of(staticConnectivity);
     }
     return services.stream()
-        .map(vs -> new AbstractMap.SimpleEntry<>(vs, getEndpoint(vs)) {})
+        .map(vs -> new AbstractMap.SimpleEntry<VcapService, ConfigEndpoint>(vs, getEndpoint(vs)) {})
         .flatMap(
             e ->
                 e.getValue().advertisedModels.stream()
@@ -220,7 +220,7 @@ public class DefaultModelLocator implements ModelLocator {
 
   private List<McpConnectivity> getAllMcpConnectivityDetails(List<VcapService> services) {
     return services.stream()
-        .map(vs -> new AbstractMap.SimpleEntry<>(vs, getEndpoint(vs)) {})
+        .map(vs -> new AbstractMap.SimpleEntry<VcapService, ConfigEndpoint>(vs, getEndpoint(vs)) {})
         .filter(e -> e.getValue().advertisedMcpServers() != null)
         .flatMap(
             e ->
