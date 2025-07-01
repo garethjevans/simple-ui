@@ -1,7 +1,5 @@
 package com.vmware.tanzu.simpleui;
 
-import com.vmware.tanzu.simpleui.locator.ModelLocator;
-import com.vmware.tanzu.simpleui.locator.impl.DefaultModelLocator;
 import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
@@ -10,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import io.pivotal.cfenv.boot.genai.GenaiLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -26,12 +26,7 @@ public class McpConfiguration {
   private static final Logger LOGGER = LoggerFactory.getLogger(McpConfiguration.class);
 
   @Bean
-  public ModelLocator modelLocator() {
-    return new DefaultModelLocator();
-  }
-
-  @Bean
-  public McpSyncClientCustomizer samplingCustomizer(ModelLocator modelLocator) {
+  public McpSyncClientCustomizer samplingCustomizer(GenaiLocator locator) {
 
     return (name, mcpClientSpec) -> {
       mcpClientSpec =
@@ -47,11 +42,11 @@ public class McpConfiguration {
                 ((McpSchema.TextContent) llmRequest.messages().get(0).content()).text();
 
             Map<String, ChatClient> chatClients =
-                modelLocator.getModelNamesByCapability("TOOLS").stream()
+                    locator.getModelNamesByCapability("TOOLS").stream()
                     .collect(
                         Collectors.toMap(
                             model -> model,
-                            model -> ChatClient.create(modelLocator.getChatModelByName(model))));
+                            model -> ChatClient.create(locator.getChatModelByName(model))));
 
             ChatClient chatClient;
             if (llmRequest.modelPreferences() != null
@@ -89,15 +84,18 @@ public class McpConfiguration {
 
   @Bean
   public SyncMcpToolCallbackProvider getMcpSyncClients(
-      ModelLocator modelLocator,
+      GenaiLocator locator,
       ObjectProvider<List<McpSyncClient>> syncMcpClients,
       McpSyncClientCustomizer samplingCustomizer) {
+      LOGGER.info("Creating MCP Sync Clients");
     List<McpSyncClient> springConfigured = syncMcpClients.stream().flatMap(List::stream).toList();
 
+    LOGGER.info("Configuring {} servers from ai-server", locator.getMcpServers().size());
     List<McpSyncClient> aiServerConfigured =
-        modelLocator.getMcpServers().stream()
+            locator.getMcpServers().stream()
             .map(
                 m -> {
+                  LOGGER.info("Connecting to mcp server at url {}", m.url());
                   var transport = HttpClientSseClientTransport.builder(m.url()).build();
 
                   NamedClientMcpTransport namedTransport =
@@ -115,6 +113,7 @@ public class McpConfiguration {
                 })
             .toList();
 
+    LOGGER.info("Combining lists");
     List<McpSyncClient> all = new ArrayList<>();
     all.addAll(springConfigured);
     all.addAll(aiServerConfigured);
