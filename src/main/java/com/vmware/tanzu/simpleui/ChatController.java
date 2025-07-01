@@ -1,9 +1,10 @@
 package com.vmware.tanzu.simpleui;
 
-import com.vmware.tanzu.simpleui.locator.ModelLocator;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+import io.pivotal.cfenv.boot.genai.GenaiLocator;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -31,16 +32,16 @@ public class ChatController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ChatController.class);
 
-  private final ModelLocator modelLocator;
+  private final GenaiLocator locator;
   private final ToolCallbackProvider toolCallbackProvider;
 
   private static final DecimalFormat df = new DecimalFormat("0.00");
 
   public ChatController(
-      ModelLocator modelLocator, @Nullable SyncMcpToolCallbackProvider toolCallbackProvider) {
+          GenaiLocator locator, @Nullable SyncMcpToolCallbackProvider toolCallbackProvider) {
     LOGGER.info("using ToolCallbackProvider {}", toolCallbackProvider);
     this.toolCallbackProvider = toolCallbackProvider;
-    this.modelLocator = modelLocator;
+    this.locator = locator;
   }
 
   @PostMapping(path = {"/chat"})
@@ -57,7 +58,7 @@ public class ChatController {
       }
     }
 
-    ChatModel chatModel = modelLocator.getChatModelByName(request.model());
+    ChatModel chatModel = locator.getChatModelByName(request.model());
     ChatClient client =
         ChatClient.builder(chatModel).defaultToolCallbacks(toolCallbackProvider).build();
 
@@ -103,7 +104,7 @@ public class ChatController {
   @GetMapping(path = {"/models"})
   public List<String> models() {
     LOGGER.info("Listing models");
-    return modelLocator.getModelNamesByCapability("CHAT");
+    return locator.getModelNamesByCapability("CHAT");
   }
 
   private String toHtml(String in) {
