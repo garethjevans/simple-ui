@@ -16,6 +16,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<spring-ai.version>1.1.0</spring-ai.version>
+		<java-cfenv-version>3.5.0</java-cfenv-version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -29,6 +30,20 @@
 		<dependency>
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-mcp-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.ai</groupId>
+			<artifactId>spring-ai-autoconfigure-mcp-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.pivotal.cfenv</groupId>
+			<artifactId>java-cfenv-boot</artifactId>
+			<version>${java-cfenv-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.pivotal.cfenv</groupId>
+			<artifactId>java-cfenv-boot-tanzu-genai</artifactId>
+			<version>${java-cfenv-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.commonmark</groupId>
