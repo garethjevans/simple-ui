@@ -4,12 +4,11 @@ import io.modelcontextprotocol.client.McpClient;
 import io.modelcontextprotocol.client.McpSyncClient;
 import io.modelcontextprotocol.client.transport.HttpClientSseClientTransport;
 import io.modelcontextprotocol.spec.McpSchema;
+import io.pivotal.cfenv.boot.genai.GenaiLocator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import io.pivotal.cfenv.boot.genai.GenaiLocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
@@ -42,7 +41,7 @@ public class McpConfiguration {
                 ((McpSchema.TextContent) llmRequest.messages().get(0).content()).text();
 
             Map<String, ChatClient> chatClients =
-                    locator.getModelNamesByCapability("TOOLS").stream()
+                locator.getModelNamesByCapability("TOOLS").stream()
                     .collect(
                         Collectors.toMap(
                             model -> model,
@@ -87,12 +86,12 @@ public class McpConfiguration {
       GenaiLocator locator,
       ObjectProvider<List<McpSyncClient>> syncMcpClients,
       McpSyncClientCustomizer samplingCustomizer) {
-      LOGGER.info("Creating MCP Sync Clients");
+    LOGGER.info("Creating MCP Sync Clients");
     List<McpSyncClient> springConfigured = syncMcpClients.stream().flatMap(List::stream).toList();
 
     LOGGER.info("Configuring {} servers from ai-server", locator.getMcpServers().size());
     List<McpSyncClient> aiServerConfigured =
-            locator.getMcpServers().stream()
+        locator.getMcpServers().stream()
             .map(
                 m -> {
                   LOGGER.info("Connecting to mcp server at url {}", m.url());

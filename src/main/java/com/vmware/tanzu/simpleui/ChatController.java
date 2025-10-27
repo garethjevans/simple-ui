@@ -1,10 +1,9 @@
 package com.vmware.tanzu.simpleui;
 
+import io.pivotal.cfenv.boot.genai.GenaiLocator;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.pivotal.cfenv.boot.genai.GenaiLocator;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
@@ -38,7 +37,7 @@ public class ChatController {
   private static final DecimalFormat df = new DecimalFormat("0.00");
 
   public ChatController(
-          GenaiLocator locator, @Nullable SyncMcpToolCallbackProvider toolCallbackProvider) {
+      GenaiLocator locator, @Nullable SyncMcpToolCallbackProvider toolCallbackProvider) {
     LOGGER.info("using ToolCallbackProvider {}", toolCallbackProvider);
     this.toolCallbackProvider = toolCallbackProvider;
     this.locator = locator;
