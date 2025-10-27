@@ -1,15 +1,22 @@
 package com.vmware.tanzu.simpleui;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vmware.tanzu.simpleui.locator.ModelLocator;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.ChatClientResponse;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
@@ -18,13 +25,14 @@ import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.retry.NonTransientAiException;
 import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.http.MediaType;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.RequestAttributes;
-import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import reactor.core.publisher.Flux;
 
 @RestController
 public class ChatController {
@@ -33,14 +41,74 @@ public class ChatController {
 
   private final ModelLocator modelLocator;
   private final ToolCallbackProvider toolCallbackProvider;
+  private final ExecutorService executor = Executors.newCachedThreadPool();
+  private final ObjectMapper objectMapper;
 
   private static final DecimalFormat df = new DecimalFormat("0.00");
 
   public ChatController(
-      ModelLocator modelLocator, @Nullable SyncMcpToolCallbackProvider toolCallbackProvider) {
+      ModelLocator modelLocator,
+      @Nullable SyncMcpToolCallbackProvider toolCallbackProvider,
+      ObjectMapper objectMapper) {
     LOGGER.info("using ToolCallbackProvider {}", toolCallbackProvider);
     this.toolCallbackProvider = toolCallbackProvider;
     this.modelLocator = modelLocator;
+    this.objectMapper = objectMapper;
+  }
+
+  @PostMapping(
+      path = {"/chat/stream"},
+      produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  public SseEmitter streamMessage(@RequestBody ChatRequest request) {
+    LOGGER.info("Got streaming request: {}", request);
+
+    SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+    ChatModel chatModel = modelLocator.getChatModelByName(request.model());
+    ChatClient client =
+        ChatClient.builder(chatModel).defaultToolCallbacks(toolCallbackProvider).build();
+
+    executor.execute(
+        () -> {
+          try {
+            Flux<ChatClientResponse> responseStream =
+                client
+                    .prompt(
+                        new Prompt(
+                            convertMessages(request),
+                            ToolCallingChatOptions.builder().model(request.model()).build()))
+                    .stream()
+                    .chatClientResponse();
+
+            responseStream
+                .filter(Objects::nonNull)
+                .subscribe(
+                    chunk -> {
+                      try {
+                        // Send as JSON to preserve exact content
+                        Map<String, ChatClientResponse> payload = Map.of("content", chunk);
+                        String jsonData = objectMapper.writeValueAsString(payload);
+
+                        emitter.send(SseEmitter.event().data(jsonData).name("message"));
+                      } catch (IOException e) {
+                        emitter.completeWithError(e);
+                      }
+                    },
+                    emitter::completeWithError,
+                    () -> {
+                      try {
+                        emitter.send(SseEmitter.event().name("close").data(""));
+                        emitter.complete();
+                      } catch (IOException e) {
+                        emitter.completeWithError(e);
+                      }
+                    });
+
+          } catch (Exception e) {
+            emitter.completeWithError(e);
+          }
+        });
+
+    return emitter;
   }
 
   @PostMapping(path = {"/chat"})
@@ -60,9 +128,6 @@ public class ChatController {
     ChatModel chatModel = modelLocator.getChatModelByName(request.model());
     ChatClient client =
         ChatClient.builder(chatModel).defaultToolCallbacks(toolCallbackProvider).build();
-
-    RequestContextHolder.getRequestAttributes()
-        .setAttribute("model", request.model(), RequestAttributes.SCOPE_REQUEST);
 
     try {
       long start = System.currentTimeMillis();

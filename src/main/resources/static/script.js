@@ -23,11 +23,66 @@ msgerForm.addEventListener("submit", event => {
   appendMessage(PERSON_NAME, "fa-user", "right", msgText);
   msgerInput.value = "";
 
-  conversation.model = model
-  conversation.messages.push({role:"user", message: msgText})
+  conversation.model = model;
+  conversation.messages.push({role:"user", message: msgText});
 
-  userAction();
+  userActionStreaming();
 });
+
+// Streaming chat handler
+async function userActionStreaming() {
+  const chatBox = msgerChat;
+  let responseText = "";
+  let usage = {promptTokens: '-', completionTokens: '-', totalTokens: '-', timeTaken: '-', tokensPerSecond: '-'};
+  let role = "assistant (stream)";
+  // Show a placeholder message for streaming
+  let msgId = "streaming-response-" + Date.now();
+  let msgHTML = `<div id="${msgId}" class="clr-row left-msg"><div class="assistant (stream)"><div class="card"><div class="card-header">assistant (stream)</div><div class="card-block"><div class="card-title">${formatDate(new Date())}</div><pre></pre><div class="card-text streaming-content"></div></pre></div></div></div></div>`;
+
+  chatBox.insertAdjacentHTML("beforeend", msgHTML);
+  chatBox.scrollTop += 500;
+  const msgDiv = document.getElementById(msgId).querySelector(".streaming-content");
+
+  const response = await fetch('/chat/stream', {
+    method: 'POST',
+    body: JSON.stringify(conversation),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.body) {
+    msgDiv.innerText = "[Error: No response body]";
+    return;
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let done = false;
+  while (!done) {
+    const { value, done: doneReading } = await reader.read();
+    done = doneReading;
+    if (value) {
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          const data = line.slice(5); // Remove 'data: ' prefix
+          if (data.trim()) {
+            const parsedData = JSON.parse(data);
+            responseText += parsedData.content.chatResponse.results[0].output.text
+          }
+        }
+      }
+
+      msgDiv.innerText = responseText;
+      chatBox.scrollTop += 500;
+    }
+  }
+  // Optionally, update conversation state
+  conversation.messages.push({role: "assistant", message: responseText});
+}
 
 window.addEventListener("load", event => {
   modelsAction();
