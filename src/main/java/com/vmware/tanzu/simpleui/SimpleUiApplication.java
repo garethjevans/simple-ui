@@ -12,10 +12,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
       OpenAiChatAutoConfiguration.class,
       OpenAiEmbeddingAutoConfiguration.class,
       OpenAiAudioSpeechAutoConfiguration.class
-    })
+    }
+    )
 public class SimpleUiApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(SimpleUiApplication.class, args);
   }
+
 }
