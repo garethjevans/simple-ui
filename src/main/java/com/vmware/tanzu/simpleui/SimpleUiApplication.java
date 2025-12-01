@@ -6,11 +6,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication(
     exclude = {
+      OpenAiAudioSpeechAutoConfiguration.class,
       OpenAiAudioTranscriptionAutoConfiguration.class,
+      OpenAiEmbeddingAutoConfiguration.class,
       OpenAiModerationAutoConfiguration.class,
       OpenAiImageAutoConfiguration.class,
-      OpenAiEmbeddingAutoConfiguration.class,
-      OpenAiAudioSpeechAutoConfiguration.class
     })
 public class SimpleUiApplication {
 

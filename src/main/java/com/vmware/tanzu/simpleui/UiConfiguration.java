@@ -15,6 +15,11 @@ public class UiConfiguration {
     return (OpenAiChatModel) locator.getFirstAvailableChatModel();
   }
 
+  //  @Bean
+  //  public OpenAiEmbeddingModel embeddingModel(GenaiLocator locator) {
+  //    return (OpenAiEmbeddingModel) locator.getFirstAvailableEmbeddingModel();
+  //  }
+
   @Bean
   public OpenAiApi openAiApi(
       @Value("${genai.locator.api-key}") String apiKey,
