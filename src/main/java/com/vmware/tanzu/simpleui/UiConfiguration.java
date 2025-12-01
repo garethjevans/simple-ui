@@ -1,7 +1,9 @@
 package com.vmware.tanzu.simpleui;
 
 import io.pivotal.cfenv.boot.genai.GenaiLocator;
-import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -9,7 +11,14 @@ import org.springframework.context.annotation.Configuration;
 public class UiConfiguration {
 
   @Bean
-  public ChatModel chatModel(GenaiLocator locator) {
-    return locator.getFirstAvailableChatModel();
+  public OpenAiChatModel chatModel(GenaiLocator locator) {
+    return (OpenAiChatModel) locator.getFirstAvailableChatModel();
+  }
+
+  @Bean
+  public OpenAiApi openAiApi(
+      @Value("${genai.locator.api-key}") String apiKey,
+      @Value("${genai.locator.api-base}") String apiBase) {
+    return OpenAiApi.builder().apiKey(apiKey).baseUrl(apiBase + "/openai/").build();
   }
 }

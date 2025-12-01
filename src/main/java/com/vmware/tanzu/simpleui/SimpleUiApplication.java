@@ -9,7 +9,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
       OpenAiAudioTranscriptionAutoConfiguration.class,
       OpenAiModerationAutoConfiguration.class,
       OpenAiImageAutoConfiguration.class,
-      OpenAiChatAutoConfiguration.class,
       OpenAiEmbeddingAutoConfiguration.class,
       OpenAiAudioSpeechAutoConfiguration.class
     })
